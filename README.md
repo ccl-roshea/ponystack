@@ -13,9 +13,9 @@
 
 ---
 
-## gstack from YC bloats your code. On purpose. Here is the quote.
+## Garry Tan's gstack bloats your code. On purpose. Here is the quote.
 
-[gstack](https://garryslist.org/posts/boil-the-ocean) (Garry Tan / Y Combinator) is a genuinely great
+[gstack](https://github.com/garrytan/gstack) (Garry Tan's personal open-source Claude Code setup; he is president & CEO of Y Combinator) is a genuinely great
 process framework: it decomposes, plans, reviews, ships. Its founding principle
 is "Boil the Lake," and it says this, verbatim, in its own `ETHOS.md`:
 
@@ -30,7 +30,10 @@ is "Boil the Lake," and it says this, verbatim, in its own `ETHOS.md`:
 > Anti-pattern: *"Choose B - it covers 90% with less code." (If A is 70 lines
 > more, choose A.)*
 
-Source: gstack `ETHOS.md`, and https://garryslist.org/posts/boil-the-ocean
+Source: gstack's own `ETHOS.md`, section "1. Boil the Lake"
+([github.com/garrytan/gstack](https://github.com/garrytan/gstack/blob/main/ETHOS.md)).
+Tan's ["boil the ocean" essay](https://garryslist.org/posts/boil-the-ocean) is the
+philosophical framing gstack links to; the +70-LOC rule itself lives in `ETHOS.md`.
 
 Read it again. The rule is literally *"prefer the version with 70 more lines of
 code, every time."* That is policy, not an accident. And it is a bug in exactly
