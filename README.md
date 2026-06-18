@@ -1,6 +1,10 @@
 <h1 align="center">ponystack</h1>
 
 <p align="center">
+  <img src="assets/ponystack.png" width="240" alt="ponystack - the lazy senior pony">
+</p>
+
+<p align="center">
   <em>Boil the lake to understand it. Don't pour it into your code.</em><br>
   <strong>Think expensive. Write cheap.</strong>
 </p>
