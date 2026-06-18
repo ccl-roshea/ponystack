@@ -1,0 +1,36 @@
+# ponistack benchmark: code size + cost across three arms, same model, same tasks.
+#
+#   Run:   npx promptfoo@latest eval -c benchmarks/promptfooconfig.yaml --repeat 10
+#   View:  npx promptfoo@latest view
+#   Share: npx promptfoo@latest share
+#
+# Needs ANTHROPIC_API_KEY in the environment or a .env file. For a local run via
+# any OpenAI-compatible gateway (no Anthropic key), use `node run-local.js` instead.
+description: "ponistack vs gstack vs no-skill: same model, same tasks. Measures code LOC (deterministic) and correctness (executed/structural)."
+
+providers:
+  - id: anthropic:messages:claude-haiku-4-5-20251001
+    config: { max_tokens: 8192, temperature: 1 }
+  - id: anthropic:messages:claude-sonnet-4-6
+    config: { max_tokens: 8192, temperature: 1 }
+  - id: anthropic:messages:claude-opus-4-8
+    config: { max_tokens: 8192, temperature: 1 }
+
+prompts:
+  - id: file://arms/baseline.js
+    label: baseline (no skill)
+  - id: file://arms/gstack.js
+    label: gstack (boil the lake)
+  - id: file://arms/ponistack.js
+    label: ponistack
+
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://loc.js
+      metric: code_loc
+    - type: javascript
+      value: file://correctness.js
+      metric: correct
+
+tests: file://tasks.js

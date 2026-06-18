@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ponistack",
+  "description": "Think expensive, write cheap. The membrane that lets gstack boil the lake without pouring it into your code.",
+  "owner": {
+    "name": "Aianback"
+  },
+  "plugins": [
+    {
+      "name": "ponistack",
+      "description": "Always-on phase router: gstack plans wide, ponytail's lazy senior ships narrow. Generator + critic in one pipeline.",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}

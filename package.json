@@ -1,0 +1,11 @@
+{
+  "name": "ponistack",
+  "version": "0.1.0",
+  "description": "The membrane between an expensive brain and cheap hands. Think expensive, write cheap.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test",
+    "bench": "npx promptfoo@latest eval -c benchmarks/promptfooconfig.yaml --repeat 10 && npx promptfoo@latest view",
+    "bench:local": "node benchmarks/run-local.js"
+  }
+}
