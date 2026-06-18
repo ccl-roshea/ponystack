@@ -11,7 +11,7 @@ single-run within a few percent, so the result is stable, not a lucky draw.
 |---|--:|--:|--:|
 | baseline | 1018 | 1033 | 725 |
 | gstack | 1424 | 780 | 1328 |
-| ponistack | 545 | 197 | 238 |
+| ponystack | 545 | 197 | 238 |
 
 ## Correctness (share of task-runs passing the executing gate)
 
@@ -19,7 +19,7 @@ single-run within a few percent, so the result is stable, not a lucky draw.
 |---|--:|--:|--:|
 | baseline | 81% | 100% | 86% |
 | gstack | 71% | 76% | 57% |
-| ponistack | 86% | 86% | 76% |
+| ponystack | 86% | 86% | 76% |
 
 ## Cost per arm (USD, all task-runs)
 
@@ -27,7 +27,7 @@ single-run within a few percent, so the result is stable, not a lucky draw.
 |---|--:|--:|--:|
 | baseline | 0.49 | 0.56 | 0.20 |
 | gstack | 1.01 | 0.58 | 0.39 |
-| ponistack | 0.51 | 0.27 | 0.09 |
+| ponystack | 0.51 | 0.27 | 0.09 |
 
 ## Median LOC per task (the clean leanness number)
 
@@ -35,11 +35,11 @@ single-run within a few percent, so the result is stable, not a lucky draw.
 |---|--:|--:|--:|
 | baseline | 52 | 51 | 30 |
 | gstack | 62 | 35 | 56 |
-| ponistack | 28 | 10 | 11 |
+| ponystack | 28 | 10 | 11 |
 
 ## Takeaways
 
-- **ponistack beats gstack on every model, on both axes at once:** 62% less code
+- **ponystack beats gstack on every model, on both axes at once:** 62% less code
   on gpt-5.5 (545 vs 1424), 75% on opus (197 vs 780), 82% on gemini (238 vs 1328) -
   while scoring HIGHER correctness every time (86 vs 71, 86 vs 76, 76 vs 57).
 - **gstack has the lowest correctness of all three arms on all three models**
@@ -48,8 +48,8 @@ single-run within a few percent, so the result is stable, not a lucky draw.
 - **gstack often out-bloats a no-skill baseline:** +40% code on gpt-5.5 (at lower
   correctness, 71 vs 81), +83% on gemini (57 vs 86). The "prefer +70 LOC" policy
   made literal. On opus it is leaner than baseline (780 vs 1033) but still ~4x
-  ponistack and less correct (76 vs 100).
-- **ponistack is also cheaper:** ~50% less spend than gstack on gpt-5.5 and opus,
+  ponystack and less correct (76 vs 100).
+- **ponystack is also cheaper:** ~50% less spend than gstack on gpt-5.5 and opus,
   76% less on gemini - fewer output tokens, lower bill.
 
 ## Honest caveats

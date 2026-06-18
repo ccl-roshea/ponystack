@@ -4,7 +4,7 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
-const { detectPhase, membraneDoctrine, PHASE_RULE } = require('../hooks/ponistack-hook.js');
+const { detectPhase, membraneDoctrine, PHASE_RULE } = require('../hooks/ponystack-hook.js');
 
 const root = path.join(__dirname, '..');
 
@@ -18,7 +18,7 @@ test('phase router: understand/plan/design/research', () => {
 
 test('phase router: review (code review, not plan review)', () => {
   for (const p of ['/review', '/qa the checkout', '/code-review', '/design-review',
-    '/ponistack-contract', 'review this diff', 'what can we delete here', 'is this over-engineered?']) {
+    '/ponystack-contract', 'review this diff', 'what can we delete here', 'is this over-engineered?']) {
     assert.equal(detectPhase(p), 'review', `expected review for: ${p}`);
   }
 });
@@ -34,7 +34,7 @@ test('phase router: implement (and default)', () => {
 
 test('every phase has a rule and the doctrine names the membrane', () => {
   for (const phase of ['understand', 'implement', 'review']) {
-    assert.ok(PHASE_RULE[phase] && PHASE_RULE[phase].includes('PONISTACK PHASE'), phase);
+    assert.ok(PHASE_RULE[phase] && PHASE_RULE[phase].includes('PONYSTACK PHASE'), phase);
   }
   assert.ok(membraneDoctrine().includes('Boil the lake to understand it'));
 });

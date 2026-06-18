@@ -1,4 +1,4 @@
-# ponistack benchmark: code size + cost across three arms, same model, same tasks.
+# ponystack benchmark: code size + cost across three arms, same model, same tasks.
 #
 #   Run:   npx promptfoo@latest eval -c benchmarks/promptfooconfig.yaml --repeat 10
 #   View:  npx promptfoo@latest view
@@ -6,7 +6,7 @@
 #
 # Needs ANTHROPIC_API_KEY in the environment or a .env file. For a local run via
 # any OpenAI-compatible gateway (no Anthropic key), use `node run-local.js` instead.
-description: "ponistack vs gstack vs no-skill: same model, same tasks. Measures code LOC (deterministic) and correctness (executed/structural)."
+description: "ponystack vs gstack vs no-skill: same model, same tasks. Measures code LOC (deterministic) and correctness (executed/structural)."
 
 providers:
   - id: anthropic:messages:claude-haiku-4-5-20251001
@@ -21,8 +21,8 @@ prompts:
     label: baseline (no skill)
   - id: file://arms/gstack.js
     label: gstack (boil the lake)
-  - id: file://arms/ponistack.js
-    label: ponistack
+  - id: file://arms/ponystack.js
+    label: ponystack
 
 defaultTest:
   assert:

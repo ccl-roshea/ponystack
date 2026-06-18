@@ -1,17 +1,17 @@
-# SPEC - the prompt that builds ponistack
+# SPEC - the prompt that builds ponystack
 
-This is the master prompt. ponistack was built from it, and ponistack rebuilds
+This is the master prompt. ponystack was built from it, and ponystack rebuilds
 itself from it (see "The bootstrap" in the README). Hand this file to a capable
 coding agent verbatim; the output should be this repository.
 
-It is written in ponistack's own voice: the spec is the lake - read all of it,
+It is written in ponystack's own voice: the spec is the lake - read all of it,
 think hard - then write the least code that satisfies it.
 
 ---
 
 ## Prompt
 
-> You are building **ponistack**, a standalone Claude Code plugin (it lives
+> You are building **ponystack**, a standalone Claude Code plugin (it lives
 > beside any setup and overwrites nothing). It marries two real frameworks:
 >
 > - **gstack** (Garry Tan / YC): strong on PROCESS - decompose, plan, review,
@@ -24,7 +24,7 @@ think hard - then write the least code that satisfies it.
 >
 > They are a pair: generator + critic. gstack's one-line bug is conflating the
 > cost of THINKING (near-zero, spend freely) with the cost of CODE (never zero).
-> ponistack is the **membrane**: *Boil the lake to understand it. Don't pour it
+> ponystack is the **membrane**: *Boil the lake to understand it. Don't pour it
 > into your code. Think expensive, write cheap.*
 >
 > Build it with three seams:
@@ -50,7 +50,7 @@ think hard - then write the least code that satisfies it.
 > `benchmarks/`, `README.md`, `LICENSE` (MIT), `AGENTS.md`.
 >
 > The benchmark must prove the claim with reproducible numbers: three arms
-> (no-skill baseline, gstack = its ETHOS as system prompt, ponistack) over the
+> (no-skill baseline, gstack = its ETHOS as system prompt, ponystack) over the
 > same tasks, measuring code LOC (deterministic) and correctness (executed
 > where feasible, structural otherwise). Correctness is a gate: "less code" must
 > never mean "broken code."
@@ -59,10 +59,10 @@ think hard - then write the least code that satisfies it.
 > - MIT. Credit both gstack (Garry Tan / YC) and ponytail (Dietrich Gebert) in
 >   README and LICENSE.
 > - Obey your own creed: minimum code, YAGNI, no needless abstractions. The
->   lazy senior's discipline applies to ponistack itself, especially to it.
+>   lazy senior's discipline applies to ponystack itself, especially to it.
 > - Everything in the repo is in English. Overwrite nothing in the user's setup.
 >
-> Success: a stranger installs ponistack, sees reproducible numbers vs gstack in
+> Success: a stranger installs ponystack, sees reproducible numbers vs gstack in
 > the README, runs the benchmark, and gets the same numbers.
 
 ---
@@ -70,7 +70,7 @@ think hard - then write the least code that satisfies it.
 ## The bootstrap (why this file exists)
 
 - **Gen 0** - this repo, built by a coding agent applying the membrane by hand.
-- **Gen 1** - install ponistack, hand it this SPEC, let its phase router drive
+- **Gen 1** - install ponystack, hand it this SPEC, let its phase router drive
   the build. Compare structure and benchmark numbers to Gen 0.
 - **Convergence** - when Gen 1 reproduces Gen 0 (installs, hooks valid, tests
   green, bench runs), the framework is self-hosting. Like a compiler that

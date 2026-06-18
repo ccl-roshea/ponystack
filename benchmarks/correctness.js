@@ -43,7 +43,7 @@ function python() {
 }
 
 function tmpFile(ext, content) {
-  const p = path.join(os.tmpdir(), `ponistack-bench-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+  const p = path.join(os.tmpdir(), `ponystack-bench-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
   fs.writeFileSync(p, content);
   return p;
 }

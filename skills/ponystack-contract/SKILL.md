@@ -1,12 +1,12 @@
 ---
-name: ponistack-contract
+name: ponystack-contract
 description: >
   The contract gate (Seam 2). Closes a wide pass by cutting it to the minimum
   that works: reinvented stdlib, speculative abstractions, dead flexibility,
   one-caller layers. One line per finding, ends with the only number that
   matters. Use after a thorough plan or implementation, or when the user says
   "contract this", "cut it down", "what can we delete", "expand-contract", or
-  invokes /ponistack-contract.
+  invokes /ponystack-contract.
 license: MIT
 ---
 
@@ -35,7 +35,7 @@ If there is nothing to cut: `Lean already. Ship.` and stop.
 ## Boundaries
 
 Complexity only. Correctness bugs, security holes, and performance go to a
-normal review pass (in `review` phase ponistack runs both). Never flag the one
+normal review pass (in `review` phase ponystack runs both). Never flag the one
 mandatory runnable check as bloat. Never cut trust-boundary validation,
 data-loss handling, security, or accessibility. Lists findings; does not apply
 them unless asked.

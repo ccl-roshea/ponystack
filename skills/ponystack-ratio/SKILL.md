@@ -1,10 +1,10 @@
 ---
-name: ponistack-ratio
+name: ponystack-ratio
 description: >
   Thinking-to-diff ratio (Seam 3): reasoning spent divided by net code shipped.
   The membrane's scoreboard - a high ratio means the thinking went into the plan,
   not the line count. Use when the user says "ratio", "thinking-to-diff",
-  "score this session", or invokes /ponistack-ratio.
+  "score this session", or invokes /ponystack-ratio.
 license: MIT
 ---
 

@@ -1,4 +1,4 @@
-<h1 align="center">ponistack</h1>
+<h1 align="center">ponystack</h1>
 
 <p align="center">
   <em>Boil the lake to understand it. Don't pour it into your code.</em><br>
@@ -60,7 +60,7 @@ YAGNI, then stdlib, then a native feature, then a dep you already have, then one
 line, then the minimum that works.
 
 gstack is the generator. ponytail is the critic. Apart, each is half a brain:
-gstack without a critic bloats; ponytail without a process is shallow. ponistack
+gstack without a critic bloats; ponytail without a process is shallow. ponystack
 is the membrane that joins them.
 
 ## How it works: one router, three seams
@@ -85,9 +85,9 @@ Three seams hold it together:
 1. **Phase router** (above) - the core. Generator and critic stop shouting over
    each other.
 2. **Expand -> contract** - any wide pass ends with a mandatory gate
-   (`/ponistack-contract`) that cuts breadth to the minimum that works. Producer
+   (`/ponystack-contract`) that cuts breadth to the minimum that works. Producer
    and critic in one pipeline, ending with `net: -N lines possible.`
-3. **Thinking-to-diff ratio** (`/ponistack-ratio`) - reasoning spent divided by
+3. **Thinking-to-diff ratio** (`/ponystack-ratio`) - reasoning spent divided by
    net code shipped. High is the champion. `9,000 tokens of thought -> 11 lines`
    is the goal, and the screenshot.
 
@@ -97,7 +97,7 @@ loss, security, accessibility. That floor is inherited from both parents.
 ## The proof
 
 Same model, same tasks, three arms: a no-skill baseline, **gstack** (its real
-`ETHOS.md` as the system prompt), and **ponistack**. We measure code size
+`ETHOS.md` as the system prompt), and **ponystack**. We measure code size
 (deterministic LOC) and correctness (executed where feasible, structural
 otherwise). Correctness is a gate: less code that does not work is not a win, it
 is a bug.
@@ -109,7 +109,7 @@ is a bug.
 |---|--:|--:|--:|
 | baseline (no skill) | 1018 | 1033 | 725 |
 | gstack (its ETHOS) | 1424 | 780 | 1328 |
-| **ponistack** | **545** | **197** | **238** |
+| **ponystack** | **545** | **197** | **238** |
 
 **Correctness** (share of task-runs whose generated code passes the gate):
 
@@ -117,9 +117,9 @@ is a bug.
 |---|--:|--:|--:|
 | baseline (no skill) | 81% | 100% | 86% |
 | gstack (its ETHOS) | 71% | 76% | 57% |
-| **ponistack** | **86%** | **86%** | **76%** |
+| **ponystack** | **86%** | **86%** | **76%** |
 
-ponistack ships **62-82% less code than gstack** (545 vs 1424 on gpt-5.5; 197 vs
+ponystack ships **62-82% less code than gstack** (545 vs 1424 on gpt-5.5; 197 vs
 780 on opus; 238 vs 1328 on gemini) while being **more correct on every model**
 (86/86/76% vs gstack's 71/76/57%). gstack is the least-correct arm of the three
 on all three models, and on 2 of 3 it out-bloats a no-skill baseline (+40% on
@@ -129,7 +129,7 @@ membrane does exactly what it claims.
 <sub>3 runs per cell via the Perplexity Agent API across three vendors (OpenAI,
 Anthropic, Google), 7 tasks, $4.12 total - stable vs an earlier single-run pass.
 The gstack arm is gstack's real <code>ETHOS.md</code> as the system prompt; the
-ponistack arm is its implement-phase doctrine. Method + raw results:
+ponystack arm is its implement-phase doctrine. Method + raw results:
 <a href="benchmarks/results/">benchmarks/results/</a>.</sub>
 <!-- BENCH:END -->
 
@@ -146,43 +146,43 @@ node benchmarks/run-local.js
 
 Method and tasks: [benchmarks/](benchmarks/).
 
-## The bootstrap: ponistack built ponistack
+## The bootstrap: ponystack built ponystack
 
 This repo was built from a single prompt, [`SPEC.md`](SPEC.md). That prompt is
-in the repo. Hand it to ponistack and it rebuilds itself - a compiler that
+in the repo. Hand it to ponystack and it rebuilds itself - a compiler that
 compiles itself. When the rebuild reproduces this one (installs, hooks valid,
 tests green, bench runs), the framework is self-hosting. If a framework for
 disciplined code can't build itself with discipline, why trust it with yours?
 
-First run: a fresh agent with no memory of this repo rebuilt ponistack from
+First run: a fresh agent with no memory of this repo rebuilt ponystack from
 [`SPEC.md`](SPEC.md) alone, landing within 2.4% of this repo's code size with
 tests green and the same architecture - details in [`BOOTSTRAP.md`](BOOTSTRAP.md).
 
 ## Install (Claude Code)
 
 ```
-/plugin marketplace add AyanbekDos/ponistack
-/plugin install ponistack@ponistack
+/plugin marketplace add AyanbekDos/ponystack
+/plugin install ponystack@ponystack
 ```
 
 Two tiny Node.js lifecycle hooks run on session start and on each prompt, so
 `node` must be on your PATH. If it isn't, the skills still work; the always-on
 router just stays quiet instead of erroring.
 
-Nothing is overwritten. ponistack is a separate plugin that lives beside gstack,
+Nothing is overwritten. ponystack is a separate plugin that lives beside gstack,
 ponytail, or a bare setup.
 
 ## Commands
 
 | Command | What it does |
 |---------|--------------|
-| `/ponistack [understand\|implement\|review]` | Show the membrane, or force a phase. |
-| `/ponistack-contract` | The contract gate: cut a wide pass to the minimum that works. |
-| `/ponistack-ratio` | Score a session's thinking-to-diff ratio. |
+| `/ponystack [understand\|implement\|review]` | Show the membrane, or force a phase. |
+| `/ponystack-contract` | The contract gate: cut a wide pass to the minimum that works. |
+| `/ponystack-ratio` | Score a session's thinking-to-diff ratio. |
 
 ## Credit
 
-ponistack is homage and upgrade, not criticism of people. It exists because both
+ponystack is homage and upgrade, not criticism of people. It exists because both
 of these are excellent and incomplete on their own:
 
 - **gstack** - Garry Tan / Y Combinator. The "boil the lake" process philosophy

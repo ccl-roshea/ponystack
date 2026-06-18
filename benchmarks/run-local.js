@@ -20,7 +20,7 @@ const tasks = require('./tasks.js');
 const ARMS = {
   baseline: require('./arms/baseline.js'),
   gstack: require('./arms/gstack.js'),
-  ponistack: require('./arms/ponistack.js'),
+  ponystack: require('./arms/ponystack.js'),
 };
 
 function fromEnvMaster(key) {
@@ -42,7 +42,7 @@ async function call(model, messages) {
     const sys = messages.find((m) => m.role === 'system');
     const user = messages.find((m) => m.role === 'user');
     url = `${BASE_URL}/v1/agent`;
-    // ponistack: 8000 output cap - reasoning models eat budget; small caps truncate code.
+    // ponystack: 8000 output cap - reasoning models eat budget; small caps truncate code.
     body = { model, instructions: sys ? sys.content : '', input: user ? user.content : '', max_output_tokens: 8000 };
   } else {
     url = `${BASE_URL}/chat/completions`;

@@ -1,8 +1,8 @@
 # Benchmark
 
 Three arms, same model, same tasks: a no-skill **baseline**, **gstack** (its own
-`ETHOS.md` as the system prompt), and **ponistack**. We measure code size
-(deterministic) and correctness (a gate). The claim is simple: ponistack writes
+`ETHOS.md` as the system prompt), and **ponystack**. We measure code size
+(deterministic) and correctness (a gate). The claim is simple: ponystack writes
 less code than gstack on gstack's home turf, without breaking correctness.
 
 ## Arms
@@ -11,7 +11,7 @@ less code than gstack on gstack's home turf, without breaking correctness.
 |-----|---------------|
 | `baseline` | none - just the task |
 | `gstack` | `gstack-ETHOS.md`, vendored verbatim (MIT, Garry Tan / YC) |
-| `ponistack` | `skills/ponistack/SKILL.md` - the implement-phase doctrine |
+| `ponystack` | `skills/ponystack/SKILL.md` - the implement-phase doctrine |
 
 The gstack arm uses gstack's real builder ethos so the head-to-head is honest,
 not a strawman. On single-shot completions there are no workflow commands to run,
@@ -65,7 +65,7 @@ Prerequisites for the executed checks: **Python 3** and **Node.js 18+** on PATH.
 
 - Single-shot calls re-send the skill every time. In a real session the ruleset
   is injected once and prompt-cached, so the cost gap widens further for
-  ponistack.
+  ponystack.
 - React / FastAPI / cache checks are structural, not executed (see above).
 - `run-local.js` defaults to `--repeat 1` for speed; use the promptfoo path with
   `--repeat 10` for the median numbers a stranger should reproduce.

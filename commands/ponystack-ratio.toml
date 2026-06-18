@@ -1,0 +1,2 @@
+description = "Thinking-to-diff ratio (Seam 3): score reasoning spent vs code shipped"
+prompt = "Report the ponystack thinking-to-diff ratio for the work just done. thinking : diff = <reasoning tokens this session> : <net non-blank non-comment code LOC added>. ratio = reasoning / net LOC. High ratio is the champion (deep thought, narrow output); low ratio means the lake got poured into the diff. Estimate reasoning tokens from the conversation if exact counts are unavailable. One line verdict, then stop."

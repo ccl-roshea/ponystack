@@ -1,7 +1,7 @@
 # Bootstrap - the framework rebuilds itself (2026-06-18)
 
-The claim from SPEC.md: ponistack is self-hosting. Hand its spec to a fresh agent
-running under ponistack's discipline and it regenerates ponistack. Like a compiler
+The claim from SPEC.md: ponystack is self-hosting. Hand its spec to a fresh agent
+running under ponystack's discipline and it regenerates ponystack. Like a compiler
 that compiles itself - a fixed point, not infinite recursion.
 
 This is the first run of that test.
@@ -12,7 +12,7 @@ This is the first run of that test.
   `SPEC.md` in an empty directory and the one permitted external file (gstack's
   real `ETHOS.md`, the legitimate source for the benchmark's gstack arm).
 - It was explicitly forbidden to read, list, grep, or git-show the existing
-  ponistack repo. It built Gen 1 from the spec and its own judgment.
+  ponystack repo. It built Gen 1 from the spec and its own judgment.
 - Every number below was re-verified by hand, not taken from the builder's report.
 
 ## Convergence
@@ -53,8 +53,8 @@ A copy is byte-identical; this is two disciplined engineers arriving at the same
 ## Reproduce
 
 ```bash
-mkdir -p /tmp/ponistack-gen1 && cp SPEC.md /tmp/ponistack-gen1/
-# hand /tmp/ponistack-gen1/SPEC.md to a fresh capable agent, forbid it from reading
-# any existing ponistack, let it build in that dir, then:
-cd /tmp/ponistack-gen1 && node --test && node benchmarks/run-local.js
+mkdir -p /tmp/ponystack-gen1 && cp SPEC.md /tmp/ponystack-gen1/
+# hand /tmp/ponystack-gen1/SPEC.md to a fresh capable agent, forbid it from reading
+# any existing ponystack, let it build in that dir, then:
+cd /tmp/ponystack-gen1 && node --test && node benchmarks/run-local.js
 ```

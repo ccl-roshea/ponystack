@@ -1,4 +1,4 @@
-# PONISTACK - Phase 0 research notes
+# PONYSTACK - Phase 0 research notes
 
 > Boil the lake to understand it. Don't pour it into your code.
 > Think expensive, write cheap.
@@ -38,7 +38,7 @@ should max it out. It then applies the same rule to *output* ("prefer the
   read tax, a maintenance liability, a thing to delete later. (gstack blind here)
 
 gstack literally instructs: *"prefer A (150 LOC) over B (80 LOC)"* purely
-because the delta is "cheap to write". That is the protective leak ponistack
+because the delta is "cheap to write". That is the protective leak ponystack
 patches. We keep gstack's expensive brain; we put a membrane before its hands.
 
 ---
@@ -107,7 +107,7 @@ already names the phase), plus NL fallbacks:
 |-------|---------------|-------------|
 | understand / plan / research / design | `/office-hours`,`/spec`,`/plan-*`,`/design-*`,`/investigate`,`/autoplan`; "plan", "research", "explore", "how should" | **SILENT** (boil the lake - gstack rules) |
 | implement | `/ship`, `/land-and-deploy`; "implement","add","build","write","fix","refactor" | **MAX** (ladder enforced, YAGNI) |
-| review | `/review`,`/qa`,`/code-review`,`/design-review`,`/ponistack-review`; "review","what can we delete","is this over-engineered" | **BOTH** (correctness bugs + delete-list) |
+| review | `/review`,`/qa`,`/code-review`,`/design-review`,`/ponystack-review`; "review","what can we delete","is this over-engineered" | **BOTH** (correctness bugs + delete-list) |
 
 Mechanically: the hook resolves a phase, maps it to a ponytail runtime level
 (silent=off-for-this-turn, implement=full/ultra, review=review), and emits the
@@ -123,7 +123,7 @@ work is considered done. gstack generates breadth (the expand); ponytail's
 pipeline. Producer and critic in one conveyor, not two separate sessions the
 user has to remember to chain. Reuses `ponytail-review`'s exact output
 contract (`net: -N lines possible`). Surfaces as a command (e.g.
-`/ponistack-ship` or a `/contract` gate) and as an instruction the
+`/ponystack-ship` or a `/contract` gate) and as an instruction the
 phase-router injects at end-of-implementation.
 
 ### SEAM 3 - THINKING-TO-DIFF RATIO (metric + content)
@@ -138,7 +138,7 @@ High ratio = champion ("9,000 tokens of thought → 11 lines"). Two uses:
 
 ## 4. Where they genuinely conflict (and the resolution)
 
-| Conflict | gstack says | ponytail says | ponistack resolution |
+| Conflict | gstack says | ponytail says | ponystack resolution |
 |----------|-------------|---------------|----------------------|
 | Output volume | "+70 LOC is free, prefer A" | "delete it, one line" | Split by phase (Seam 1): think wide, ship narrow. The +70 LOC of *understanding* is free; the +70 LOC of *code* is not. |
 | Tests | "boil the lake: 100% coverage, tests are the cheapest lake" | "ONE runnable check; YAGNI applies to tests too" | Phase-aware: planning a test strategy = boil; *writing* tests = ladder. Both agree security/data-loss/trust-boundary checks are never cut. |
@@ -148,7 +148,7 @@ High ratio = champion ("9,000 tokens of thought → 11 lines"). Two uses:
 
 **Agreement zone (do not touch):** both forbid cutting input validation at
 trust boundaries, error handling that prevents data loss, security, and
-accessibility. ponistack inherits this verbatim - it's the safety floor.
+accessibility. ponystack inherits this verbatim - it's the safety floor.
 
 ---
 
@@ -157,25 +157,25 @@ accessibility. ponistack inherits this verbatim - it's the safety floor.
 Mirror ponytail's proven layout (separate plugin, overwrites nothing):
 
 ```
-ponistack/
+ponystack/
   .claude-plugin/
     plugin.json            # name, version, author, dual attribution
     marketplace.json       # one plugin entry
   hooks/
     hooks.json             # SessionStart + UserPromptSubmit wiring
-    ponistack-activate.js  # SessionStart: emit membrane context + flag
-    ponistack-router.js    # UserPromptSubmit: PHASE-ROUTER (Seam 1)
-    ponistack-config.js    # phase/level resolution (fork ponytail-config)
-    ponistack-instructions.js # build phase-appropriate ruleset
+    ponystack-activate.js  # SessionStart: emit membrane context + flag
+    ponystack-router.js    # UserPromptSubmit: PHASE-ROUTER (Seam 1)
+    ponystack-config.js    # phase/level resolution (fork ponytail-config)
+    ponystack-instructions.js # build phase-appropriate ruleset
   skills/
-    ponistack/SKILL.md         # the membrane doctrine + ladder, phase-aware
-    ponistack-contract/SKILL.md # Seam 2: expand→contract gate / delete-list
-    ponistack-review/SKILL.md   # review = correctness + delete-list
-    ponistack-ratio/SKILL.md    # Seam 3: thinking-to-diff report
+    ponystack/SKILL.md         # the membrane doctrine + ladder, phase-aware
+    ponystack-contract/SKILL.md # Seam 2: expand→contract gate / delete-list
+    ponystack-review/SKILL.md   # review = correctness + delete-list
+    ponystack-ratio/SKILL.md    # Seam 3: thinking-to-diff report
   commands/                  # toml command shims
-  benchmarks/                # fork ponytail harness; add 4th arm = ponistack
-    promptfooconfig.yaml     # arms: baseline / gstack / ponistack
-    arms/{baseline,gstack,ponistack}.js
+  benchmarks/                # fork ponytail harness; add 4th arm = ponystack
+    promptfooconfig.yaml     # arms: baseline / gstack / ponystack
+    arms/{baseline,gstack,ponystack}.js
     loc.js  correctness.js  ratio.js
   README.md  README.ru.md(optional)  LICENSE(MIT)  AGENTS.md  NOTES.md
 ```
@@ -183,14 +183,14 @@ ponistack/
 **Build order (each step shippable, each disciplined by our own ladder):**
 1. Plugin skeleton: plugin.json + marketplace.json + LICENSE + dual attribution.
 2. Seam 1 hooks: config → instructions → router → activate. The core.
-3. `skills/ponistack/SKILL.md`: the membrane doctrine (think expensive / write
+3. `skills/ponystack/SKILL.md`: the membrane doctrine (think expensive / write
    cheap) + phase-aware ladder.
 4. Seam 2: contract gate skill + command.
 5. Benchmark: fork harness, add `gstack` arm (ETHOS as system prompt) and
-   `ponistack` arm; keep `correctness.js` as the gate so "less code" can't
+   `ponystack` arm; keep `correctness.js` as the gate so "less code" can't
    become "broken code".
 6. Seam 3: ratio metric wired into benchmark + a report line.
 7. README (the viral narrative) last, once the numbers exist to quote.
 
-**Success test:** a stranger installs ponistack, reads reproducible numbers vs
+**Success test:** a stranger installs ponystack, reads reproducible numbers vs
 gstack in the README, runs the bench themselves, gets the same numbers.

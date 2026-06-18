@@ -1,26 +1,26 @@
 ---
-name: ponistack
+name: ponystack
 description: >
   The membrane between an expensive brain and cheap hands. Boil the lake to
   understand a problem; do not pour it into your code. Think expensive, write
   cheap. A phase router mutes the lazy senior while you plan and unleashes it
-  while you implement. Use whenever the user says "ponistack", "membrane",
+  while you implement. Use whenever the user says "ponystack", "membrane",
   "think expensive write cheap", complains that a process bloats the code, or
   wants gstack's thoroughness without gstack's line count.
 license: MIT
 ---
 
-# Ponistack
+# Ponystack
 
 gstack (Garry Tan / YC) is right that understanding is cheap - so boil the
 lake. It is wrong that *code* is cheap. ponytail (Dietrich Gebert) is right
 that code is never free - so write the least of it. Both are half a brain.
-ponistack is the membrane between them.
+ponystack is the membrane between them.
 
 > **Boil the lake to understand it. Don't pour it into your code.**
 > Think expensive, write cheap.
 
-The bug ponistack patches lives in one line of gstack's ETHOS: *"prefer the
+The bug ponystack patches lives in one line of gstack's ETHOS: *"prefer the
 +70 LOC version, every time, the delta is cheap to write."* That conflates the
 cost of **thinking** (near-zero, spend freely) with the cost of **code** (never
 zero: every line is bug surface, a read tax, a thing to delete later).
@@ -37,7 +37,7 @@ and mutes the other:
 | **review** | check the diff | **BOTH** - bugs + a delete-list |
 
 This is automatic via the SessionStart + UserPromptSubmit hooks. You can force
-it: `/ponistack understand|implement|review`.
+it: `/ponystack understand|implement|review`.
 
 ## The ladder (implement phase)
 
@@ -55,14 +55,14 @@ The ladder is a reflex, not a research project. First lazy solution that works w
 ## Expand → contract (Seam 2)
 
 A wide pass (a gstack plan, a thorough implementation) is not done until it has
-been **contracted**. End it with the gate: `/ponistack-contract`. You generated
+been **contracted**. End it with the gate: `/ponystack-contract`. You generated
 breadth; now cut it to the minimum that works. Producer and critic in one
 pipeline, not two sessions you have to remember to chain.
 
 ## Thinking-to-diff ratio (Seam 3)
 
 The membrane's scoreboard: reasoning spent ÷ net code shipped. High is the
-champion ("9,000 tokens of thought → 11 lines"). Run `/ponistack-ratio` to
+champion ("9,000 tokens of thought → 11 lines"). Run `/ponystack-ratio` to
 score a session. A high ratio means the thinking went into the *plan*, not the
 *line count*.
 
@@ -74,8 +74,8 @@ Non-trivial logic (a branch, a loop, a parser, a money/security path) leaves
 ONE runnable check behind - the smallest thing that fails if the logic breaks.
 Trivial one-liners need no test.
 
-Mark deliberate shortcuts with a `ponistack:` comment that names the ceiling
-and the upgrade path: `# ponistack: O(n) scan, index it if the list grows`.
+Mark deliberate shortcuts with a `ponystack:` comment that names the ceiling
+and the upgrade path: `# ponystack: O(n) scan, index it if the list grows`.
 
 ## Output
 

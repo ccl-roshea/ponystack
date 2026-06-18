@@ -9,7 +9,7 @@ promptfoo path with `--repeat 10` for medians). 7 tasks, 3 arms, 2 models.
 |---|--:|--:|
 | baseline | 333 | 351 |
 | gstack (ETHOS) | 466 | 325 |
-| ponistack | 156 | 63 |
+| ponystack | 156 | 63 |
 
 ## Correctness (share of tasks passing the gate)
 
@@ -17,11 +17,11 @@ promptfoo path with `--repeat 10` for medians). 7 tasks, 3 arms, 2 models.
 |---|--:|--:|
 | baseline | 86% | 100% |
 | gstack (ETHOS) | 71% | 71% |
-| ponistack | 86% | 86% |
+| ponystack | 86% | 86% |
 
 ## Takeaways
 
-- ponistack vs gstack: **67% less code on gpt-5.5** (156 vs 466), **81% less on
+- ponystack vs gstack: **67% less code on gpt-5.5** (156 vs 466), **81% less on
   opus** (63 vs 325), at **higher correctness** (86% vs 71% on both).
 - gstack's correctness is the lowest of the three on both models (71%): more
   code, more ways to be wrong. It fails `debounce` and `countdown` on both.
