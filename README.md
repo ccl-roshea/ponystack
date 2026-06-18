@@ -15,7 +15,7 @@
 
 ## gstack from YC bloats your code. On purpose. Here is the quote.
 
-[gstack](https://github.com/) (Garry Tan / Y Combinator) is a genuinely great
+[gstack](https://garryslist.org/posts/boil-the-ocean) (Garry Tan / Y Combinator) is a genuinely great
 process framework: it decomposes, plans, reviews, ships. Its founding principle
 is "Boil the Lake," and it says this, verbatim, in its own `ETHOS.md`:
 
@@ -103,33 +103,34 @@ otherwise). Correctness is a gate: less code that does not work is not a win, it
 is a bug.
 
 <!-- BENCH:START -->
-**Total lines of code across all 7 tasks** (lower is leaner):
+**Total lines of code across all 7 tasks** (3 runs per cell, lower is leaner):
 
-| arm | gpt-5.5 | claude-opus-4-7 |
-|---|--:|--:|
-| baseline (no skill) | 333 | 351 |
-| gstack (its ETHOS) | 466 | 325 |
-| **ponistack** | **156** | **63** |
+| arm | gpt-5.5 | claude-opus-4-7 | gemini-3.1-pro |
+|---|--:|--:|--:|
+| baseline (no skill) | 1018 | 1033 | 725 |
+| gstack (its ETHOS) | 1424 | 780 | 1328 |
+| **ponistack** | **545** | **197** | **238** |
 
-**Correctness** (share of tasks whose generated code passes the gate):
+**Correctness** (share of task-runs whose generated code passes the gate):
 
-| arm | gpt-5.5 | claude-opus-4-7 |
-|---|--:|--:|
-| baseline (no skill) | 86% | 100% |
-| gstack (its ETHOS) | 71% | 71% |
-| **ponistack** | **86%** | **86%** |
+| arm | gpt-5.5 | claude-opus-4-7 | gemini-3.1-pro |
+|---|--:|--:|--:|
+| baseline (no skill) | 81% | 100% | 86% |
+| gstack (its ETHOS) | 71% | 76% | 57% |
+| **ponistack** | **86%** | **86%** | **76%** |
 
-ponistack ships **67-81% less code than gstack** (156 vs 466 on gpt-5.5; 63 vs
-325 on opus) while being **more correct** than it (86% vs 71% on both models).
-Less code, fewer bugs - the membrane does exactly what it claims. On gpt-5.5
-gstack also out-bloats a no-skill agent (466 vs 333), its "prefer +70 LOC"
-policy made visible.
+ponistack ships **62-82% less code than gstack** (545 vs 1424 on gpt-5.5; 197 vs
+780 on opus; 238 vs 1328 on gemini) while being **more correct on every model**
+(86/86/76% vs gstack's 71/76/57%). gstack is the least-correct arm of the three
+on all three models, and on 2 of 3 it out-bloats a no-skill baseline (+40% on
+gpt-5.5, +83% on gemini). Less code, fewer bugs, ~50-76% lower cost - the
+membrane does exactly what it claims.
 
-<sub>1 run per cell via the Perplexity Agent API (the working channel while a
-local gateway was down), so these are directional. The stranger-reproducible
-median numbers come from the promptfoo path below with <code>--repeat 10</code>.
+<sub>3 runs per cell via the Perplexity Agent API across three vendors (OpenAI,
+Anthropic, Google), 7 tasks, $4.12 total - stable vs an earlier single-run pass.
 The gstack arm is gstack's real <code>ETHOS.md</code> as the system prompt; the
-ponistack arm is its implement-phase doctrine. Method: <a href="benchmarks/">benchmarks/</a>.</sub>
+ponistack arm is its implement-phase doctrine. Method + raw results:
+<a href="benchmarks/results/">benchmarks/results/</a>.</sub>
 <!-- BENCH:END -->
 
 Reproduce it yourself - the entire point of this repo:
@@ -153,10 +154,14 @@ compiles itself. When the rebuild reproduces this one (installs, hooks valid,
 tests green, bench runs), the framework is self-hosting. If a framework for
 disciplined code can't build itself with discipline, why trust it with yours?
 
+First run: a fresh agent with no memory of this repo rebuilt ponistack from
+[`SPEC.md`](SPEC.md) alone, landing within 2.4% of this repo's code size with
+tests green and the same architecture - details in [`BOOTSTRAP.md`](BOOTSTRAP.md).
+
 ## Install (Claude Code)
 
 ```
-/plugin marketplace add <your-org>/ponistack
+/plugin marketplace add AyanbekDos/ponistack
 /plugin install ponistack@ponistack
 ```
 
