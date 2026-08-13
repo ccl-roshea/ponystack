@@ -6,7 +6,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { detectPhase, membraneDoctrine, PHASE_RULE,
-  statePath, readState, writeState } = require('../hooks/ponystack-hook.js');
+  statePath, readState, writeState, shouldEscalate } = require('../hooks/ponystack-hook.js');
 
 const root = path.join(__dirname, '..');
 
@@ -173,6 +173,30 @@ test('state: a corrupt state file reads as null, not a throw', () => {
   fs.writeFileSync(statePath(sid), '"a string"');
   assert.equal(readState(sid), null, 'a bare string is not state');
   fs.unlinkSync(statePath(sid));
+});
+
+test('escalation: fires once, on code, out of any phase but implement', () => {
+  // Fires: real code, first write, wrong phase.
+  for (const phase of ['understand', 'review', 'neutral']) {
+    assert.equal(shouldEscalate(phase, false, 'src/index.js'), true, phase);
+    assert.equal(shouldEscalate(phase, false, '/abs/path/main.py'), true, phase + ' abs');
+  }
+  // Already in implement: the ladder is in context, say nothing.
+  assert.equal(shouldEscalate('implement', false, 'src/index.js'), false);
+  // Already latched this turn: say nothing.
+  assert.equal(shouldEscalate('understand', true, 'src/index.js'), false);
+  // Prose is not code. This is what keeps /autoplan's plan write from misfiring.
+  for (const f of ['docs/plans/2026-08-13-design.md', 'README.md', 'NOTES.txt',
+    'a/b/c.markdown', 'guide.rst', 'page.adoc',
+    '/home/ro/.gstack/projects/x/plan.json',
+    '.claude/plans/current.json']) {
+    assert.equal(shouldEscalate('understand', false, f), false, f);
+  }
+  // No path, no judgement.
+  assert.equal(shouldEscalate('understand', false, ''), false);
+  assert.equal(shouldEscalate('understand', false, undefined), false);
+  // No state means no phase means no guess.
+  assert.equal(shouldEscalate(null, false, 'src/index.js'), false);
 });
 
 test('hook: every phase emits its rule without crashing', () => {

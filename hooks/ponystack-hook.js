@@ -159,6 +159,28 @@ function detectPhase(prompt) {
   return 'neutral';
 }
 
+// --- Seam 1b: mid-turn escalation --------------------------------------------
+// The phase is routed from prompt text, which is a guess. This is the
+// correction: when the model actually writes code, the ladder applies
+// regardless of what the prompt looked like.
+
+const PROSE_FILE = /\.(md|markdown|txt|rst|adoc)$/i;
+const PROSE_DIR = /(^|[\\/])(docs[\\/]plans|\.gstack|\.claude[\\/]plans)([\\/]|$)/;
+
+function shouldEscalate(phase, latched, filePath) {
+  if (!phase || phase === 'implement') return false;  // ladder already in context
+  if (latched) return false;                          // already fired this turn
+  const f = String(filePath || '');
+  if (!f) return false;                               // no path, no judgement
+  // ponystack: extension + path heuristic. /autoplan is a review pipeline whose
+  // only write is the plan markdown, so escalating on prose would be wrong 100%
+  // of the time it fired there. Upgrade path: the Task 1 probe found
+  // permission_mode in the UserPromptSubmit payload, so a future version can
+  // record plan-mode state instead of guessing from the filename.
+  if (PROSE_FILE.test(f) || PROSE_DIR.test(f)) return false;
+  return true;
+}
+
 // --- the rule emitted per phase ---------------------------------------------
 const PHASE_RULE = {
   understand:
@@ -271,4 +293,4 @@ async function main() {
 if (require.main === module) main().catch(() => {});
 
 module.exports = { detectPhase, membraneDoctrine, PHASE_RULE,
-  statePath, readState, writeState };
+  statePath, readState, writeState, shouldEscalate };
