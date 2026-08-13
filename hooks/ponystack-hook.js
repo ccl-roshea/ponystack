@@ -17,10 +17,83 @@
 // Code injects as context. ponystack: codex/copilot adapters are a later port.
 
 // --- Seam 1: phase detection -------------------------------------------------
-// Ordered, first match wins. understand BEFORE review so a plan review
-// (/plan-ceo-review) routes to planning, not code review; review BEFORE
-// implement so "review this diff" never reads as "implement".
-const PHASE_RULES = [
+// Resolution order: exact command lookup -> suffix rules -> prose regex -> neutral.
+// The lookup replaces regex alternation because alternation is what produced the
+// bugs: /devex-review missed on a hyphen, /ponystack understand inverted itself.
+
+const COMMAND_PHASE = {
+  // understand: plan, design, research, diagnose. No code yet.
+  'office-hours': 'understand',
+  spec: 'understand',
+  autoplan: 'understand',
+  'plan-ceo-review': 'understand',
+  'plan-design-review': 'understand',
+  'plan-devex-review': 'understand',
+  'plan-eng-review': 'understand',
+  'design-consultation': 'understand',
+  'design-shotgun': 'understand',
+  investigate: 'understand',
+  retro: 'understand',
+  brainstorm: 'understand',
+  brainstorming: 'understand',
+  'writing-plans': 'understand',
+
+  // review: critique something that already exists.
+  review: 'review',
+  qa: 'review',
+  'qa-only': 'review',
+  'design-review': 'review',
+  'devex-review': 'review',
+  canary: 'review',           // post-deploy monitoring: verifies what shipped
+  benchmark: 'review',        // perf regression detection: verifies what shipped
+  'benchmark-models': 'review',
+  codex: 'review',
+  cso: 'review',
+  health: 'review',
+  'ios-design-review': 'review',
+  'ios-qa': 'review',
+  'ponystack-contract': 'review',
+  'ponytail-review': 'review',
+
+  // implement: writes code.
+  ship: 'implement',
+  'land-and-deploy': 'implement',
+  'setup-deploy': 'implement',
+  'design-html': 'implement',
+  'ios-fix': 'implement',
+  'ios-clean': 'implement',
+  'ios-sync': 'implement',
+  skillify: 'implement',
+
+  // neutral: ops, tooling, prose. The ladder governs code, not these.
+  browse: 'neutral',
+  'connect-chrome': 'neutral',
+  'open-gstack-browser': 'neutral',
+  'pair-agent': 'neutral',
+  scrape: 'neutral',
+  'setup-browser-cookies': 'neutral',
+  careful: 'neutral',
+  freeze: 'neutral',
+  guard: 'neutral',
+  unfreeze: 'neutral',
+  'context-save': 'neutral',
+  'context-restore': 'neutral',
+  learn: 'neutral',
+  'gstack-upgrade': 'neutral',
+  'sync-gbrain': 'neutral',
+  'setup-gbrain': 'neutral',
+  'document-generate': 'neutral',  // prose, not code
+  'document-release': 'neutral',   // prose, not code
+  'make-pdf': 'neutral',
+  diagram: 'neutral',
+  'landing-report': 'neutral',
+  'plan-tune': 'neutral',
+  'ponystack-ratio': 'neutral',
+};
+
+// Prose fallback. Unchanged from the original router: every bug was in the
+// command alternations, not these natural-language patterns.
+const PROSE_RULES = [
   {
     phase: 'understand',
     re: /(^|\s)[/@]?(office-hours|spec|plan|plan-[a-z-]+|autoplan|design-consultation|design-shotgun|design-html|investigate|brainstorm)\b|\b(how should (i|we)|let'?s (plan|design|think|explore|brainstorm)|research this|architect this|trade-?offs?|figure out|root cause|understand the)\b/i,
@@ -35,12 +108,30 @@ const PHASE_RULES = [
   },
 ];
 
+// "/superpowers:brainstorming" -> "brainstorming". "@office-hours" -> "office-hours".
+function normalizeCommand(prompt) {
+  const first = String(prompt || '').trim().split(/\s+/)[0] || '';
+  return first.replace(/^[/@$]/, '').split(':').pop().toLowerCase();
+}
+
 function detectPhase(prompt) {
   const p = String(prompt || '');
-  for (const { phase, re } of PHASE_RULES) if (re.test(p)) return phase;
-  // ponystack: default to membrane-on. The ladder governs built CODE, not
-  // prose, so a plain question in "implement" phase still answers freely.
-  return 'implement';
+  const cmd = normalizeCommand(p);
+
+  if (COMMAND_PHASE[cmd]) return COMMAND_PHASE[cmd];
+
+  // Suffix rules so new gstack skills route without a table edit. plan-*-review
+  // is a PLAN review (understand), everything else ending in -review is a code
+  // review. Order matters, same reason the original comment gave.
+  if (/^plan-.*-review$/.test(cmd)) return 'understand';
+  if (/-review$/.test(cmd)) return 'review';
+
+  for (const { phase, re } of PROSE_RULES) if (re.test(p)) return phase;
+
+  // Unknown lands on neutral, not implement. When gstack ships a new skill the
+  // failure mode is "one short line and no opinion", not "code ladder applied to
+  // a strategy review".
+  return 'neutral';
 }
 
 // --- the rule emitted per phase ---------------------------------------------
