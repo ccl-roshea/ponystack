@@ -23,22 +23,6 @@
             "commandWindows": "if (Get-Command node -ErrorAction SilentlyContinue) { node \"$env:CLAUDE_PLUGIN_ROOT\\hooks\\ponystack-hook.js\" prompt }",
             "timeout": 5,
             "statusMessage": "Routing ponystack phase..."
-          },
-          {
-            "type": "command",
-            "command": "command -v node >/dev/null 2>&1 && node \"${CLAUDE_PLUGIN_ROOT}/tools/probe-subagent.js\" parent || exit 0",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "command -v node >/dev/null 2>&1 && node \"${CLAUDE_PLUGIN_ROOT}/tools/probe-subagent.js\" subagent || exit 0",
-            "timeout": 5
           }
         ]
       }

@@ -187,21 +187,44 @@ review turn that starts editing source has genuinely crossed into implementation
 Autoplan's plan-markdown write stops at rule 4 and never fires.
 
 `ponystack:` The prose exemption is an extension and path heuristic. Upgrade path if
-it proves too blunt: read `CLAUDE_PLAN_FILE` if a future Claude Code release exposes
-it to hooks, which would let the check key on plan-mode state instead of filename.
+it proves too blunt: the Task 1 probe found `permission_mode` in the
+`UserPromptSubmit` payload, so `prompt` mode can record it into the state file and
+`pretool` can skip escalation whenever the turn began in plan mode. That is a real
+signal, not the speculative one this note originally described. It is deliberately
+not built now: it only captures plan mode as of the prompt, not plan mode entered
+mid-turn, so it complements the path filter rather than replacing it.
 
 ## Subagent inheritance
 
 Read state, emit `PHASE_RULE[phase]` wrapped in `hookSpecificOutput`. Missing state ->
 inject nothing.
 
-**Open question, resolved by probe before implementation.** This assumes
-`SubagentStart` receives the *parent's* `session_id`. Ponytail sidestepped the
-question by using a global file, so their code is no evidence either way. If subagents
-carry their own id, the hook reads a nonexistent file and silently injects nothing: a
-soft failure, but real. Probe first (log one raw payload). Only if the id differs,
-fall back to the newest `ponystack-*.json` in tmpdir modified within five minutes,
-marked with a `ponystack:` comment.
+**RESOLVED by probe, 2026-08-13.** `SubagentStart` receives the *parent's*
+`session_id`, byte-identical to the one `UserPromptSubmit` reports:
+
+```
+parent    e9374aad-5076-4243-b2fb-f145f9f15320
+subagent  e9374aad-5076-4243-b2fb-f145f9f15320
+```
+
+No tmpdir-newest-file fallback is needed. A plain read of the session-keyed state
+file works.
+
+Observed payload keys, recorded because they are hard to discover and unlock the
+follow-ups below:
+
+- `SubagentStart`: `agent_id`, `agent_type`, `cwd`, `hook_event_name`, `prompt_id`,
+  `session_id`, `transcript_path`
+- `UserPromptSubmit`: `cwd`, `hook_event_name`, `permission_mode`, `prompt`,
+  `prompt_id`, `session_id`, `transcript_path`
+
+Two consequences worth carrying forward:
+
+- `agent_type` is present, so per-agent-type routing (the rejected option C) can be
+  built later without another probe.
+- `permission_mode` is present. This design's escalation section claims the hook has
+  no reliable read on plan-mode state; that is now known to be partly false. See the
+  revised upgrade note there.
 
 ## Failure policy
 
