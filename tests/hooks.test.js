@@ -121,3 +121,18 @@ test('phase router: trailing punctuation does not defeat the lookup', () => {
   assert.equal(detectPhase('/office-hours.'), 'understand');
   assert.equal(detectPhase('/superpowers:brainstorming!'), 'understand');
 });
+
+test('phase router: /ponystack <phase> forces that phase', () => {
+  for (const phase of ['understand', 'implement', 'review', 'neutral']) {
+    assert.equal(detectPhase('/ponystack ' + phase), phase, phase);
+    assert.equal(detectPhase('/ponystack:ponystack ' + phase), phase, 'namespaced ' + phase);
+    assert.equal(detectPhase('/ponystack ' + phase.toUpperCase()), phase, 'uppercase ' + phase);
+  }
+  // A bare invocation reports, it does not force.
+  assert.equal(detectPhase('/ponystack'), 'neutral');
+  // A junk argument must not become a phase.
+  assert.equal(detectPhase('/ponystack banana'), 'neutral');
+  // The sibling commands are not the override.
+  assert.equal(detectPhase('/ponystack-contract'), 'review');
+  assert.equal(detectPhase('/ponystack-ratio'), 'neutral');
+});

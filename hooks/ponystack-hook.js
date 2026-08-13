@@ -17,11 +17,11 @@
 // Code injects as context. ponystack: codex/copilot adapters are a later port.
 
 // --- Seam 1: phase detection -------------------------------------------------
-// Resolution order: exact command lookup -> suffix rules -> prose regex -> neutral.
+// Resolution order: /ponystack <phase> override -> exact command lookup ->
+// suffix rules -> prose regex -> neutral.
 // The lookup replaces regex alternation because alternation is what produced the
 // bugs: /devex-review missed on a hyphen, since the review pattern anchored on
-// (^|\s)[/@]?review. The /ponystack <phase> override is NOT handled here yet;
-// it still inverts itself, and Task 3 owns that fix.
+// (^|\s)[/@]?review.
 
 const COMMAND_PHASE = {
   // understand: plan, design, research, diagnose. No code yet.
@@ -93,6 +93,8 @@ const COMMAND_PHASE = {
   'ponystack-ratio': 'neutral',
 };
 
+const PHASE_NAMES = new Set(['understand', 'implement', 'review', 'neutral']);
+
 // Prose fallback. Unchanged from the original router: every bug was in the
 // command alternations, not these natural-language patterns.
 const PROSE_RULES = [
@@ -125,6 +127,13 @@ function normalizeCommand(prompt) {
 function detectPhase(prompt) {
   const p = String(prompt || '');
   const cmd = normalizeCommand(p);
+
+  // The documented override, which has never worked: bare 'understand' matched
+  // no pattern and fell through to the default. Must precede the table.
+  if (cmd === 'ponystack') {
+    const arg = p.trim().split(/\s+/)[1];
+    if (arg && PHASE_NAMES.has(arg.toLowerCase())) return arg.toLowerCase();
+  }
 
   if (Object.hasOwn(COMMAND_PHASE, cmd)) return COMMAND_PHASE[cmd];
 
