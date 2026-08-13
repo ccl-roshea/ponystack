@@ -136,6 +136,11 @@ test('phase router: /ponystack <phase> forces that phase', () => {
   // The sibling commands are not the override.
   assert.equal(detectPhase('/ponystack-contract'), 'review');
   assert.equal(detectPhase('/ponystack-ratio'), 'neutral');
+  // Ordering: the override must beat the PROSE rules, not just the table. This
+  // is the only assertion here that fails if the block is moved down.
+  assert.equal(detectPhase('/ponystack understand how to build the parser'), 'understand');
+  assert.equal(detectPhase('/ponystack understand, then implement the fix'), 'understand');
+  assert.equal(detectPhase('/ponystack neutral fix the crash and ship it'), 'neutral');
 });
 
 test('hook: every phase emits its rule without crashing', () => {

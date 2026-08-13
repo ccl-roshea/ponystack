@@ -93,8 +93,6 @@ const COMMAND_PHASE = {
   'ponystack-ratio': 'neutral',
 };
 
-const PHASE_NAMES = new Set(['understand', 'implement', 'review', 'neutral']);
-
 // Prose fallback. Unchanged from the original router: every bug was in the
 // command alternations, not these natural-language patterns.
 const PROSE_RULES = [
@@ -128,11 +126,13 @@ function detectPhase(prompt) {
   const p = String(prompt || '');
   const cmd = normalizeCommand(p);
 
-  // The documented override, which has never worked: bare 'understand' matched
-  // no pattern and fell through to the default. Must precede the table.
+  // The documented override, which had never worked: bare 'understand' matched
+  // no pattern and fell through to the default. Must precede the PROSE RULES --
+  // without that, "/ponystack understand, then implement the fix" routes to
+  // implement off the user's own trailing words, inverting the override.
   if (cmd === 'ponystack') {
-    const arg = p.trim().split(/\s+/)[1];
-    if (arg && PHASE_NAMES.has(arg.toLowerCase())) return arg.toLowerCase();
+    const arg = p.trim().split(/\s+/)[1]?.replace(/[^\w]+$/, '').toLowerCase();
+    if (arg && Object.hasOwn(PHASE_RULE, arg)) return arg;
   }
 
   if (Object.hasOwn(COMMAND_PHASE, cmd)) return COMMAND_PHASE[cmd];
