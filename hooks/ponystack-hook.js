@@ -118,7 +118,7 @@ function detectPhase(prompt) {
   const p = String(prompt || '');
   const cmd = normalizeCommand(p);
 
-  if (COMMAND_PHASE[cmd]) return COMMAND_PHASE[cmd];
+  if (Object.hasOwn(COMMAND_PHASE, cmd)) return COMMAND_PHASE[cmd];
 
   // Suffix rules so new gstack skills route without a table edit. plan-*-review
   // is a PLAN review (understand), everything else ending in -review is a code

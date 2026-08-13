@@ -78,3 +78,13 @@ test('phase router: normalization strips prefixes and plugin namespaces', () => 
   assert.equal(detectPhase('$ship'), 'implement');
   assert.equal(detectPhase('/QA-ONLY'), 'review');
 });
+
+test('phase router: prototype keys are not phases', () => {
+  for (const evil of ['constructor', '__proto__', 'toString', 'valueOf',
+    'hasOwnProperty', 'isPrototypeOf']) {
+    const got = detectPhase('/' + evil);
+    assert.equal(typeof got, 'string', `/${evil} returned ${typeof got}`);
+    assert.ok(['understand', 'implement', 'review', 'neutral'].includes(got),
+      `/${evil} -> ${got}`);
+  }
+});
