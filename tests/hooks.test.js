@@ -23,17 +23,18 @@ test('phase router: review (code review, not plan review)', () => {
   }
 });
 
-test('phase router: implement (and default)', () => {
+test('phase router: implement (prose) and neutral default', () => {
   for (const p of ['/ship', 'implement the parser', 'add a logout button', 'fix the null deref',
     'refactor this module', 'write a function that sorts', 'create the migration']) {
     assert.equal(detectPhase(p), 'implement', `expected implement for: ${p}`);
   }
-  assert.equal(detectPhase(''), 'implement', 'empty defaults to implement');
-  assert.equal(detectPhase('tell me a joke'), 'implement', 'unknown defaults to implement');
+  assert.equal(detectPhase(''), 'neutral', 'empty defaults to neutral');
+  assert.equal(detectPhase('tell me a joke'), 'neutral', 'unknown defaults to neutral');
+  assert.equal(detectPhase('what about ponytail?'), 'neutral', 'plain question is neutral');
 });
 
 test('every phase has a rule and the doctrine names the membrane', () => {
-  for (const phase of ['understand', 'implement', 'review']) {
+  for (const phase of ['understand', 'implement', 'review', 'neutral']) {
     assert.ok(PHASE_RULE[phase] && PHASE_RULE[phase].includes('PONYSTACK PHASE'), phase);
   }
   assert.ok(membraneDoctrine().includes('Boil the lake to understand it'));
@@ -135,4 +136,17 @@ test('phase router: /ponystack <phase> forces that phase', () => {
   // The sibling commands are not the override.
   assert.equal(detectPhase('/ponystack-contract'), 'review');
   assert.equal(detectPhase('/ponystack-ratio'), 'neutral');
+});
+
+test('hook: every phase emits its rule without crashing', () => {
+  const { execFileSync } = require('child_process');
+  const hook = path.join(root, 'hooks/ponystack-hook.js');
+  for (const [prompt, phase] of [['/office-hours', 'understand'], ['/ship', 'implement'],
+    ['/review', 'review'], ['tell me a joke', 'neutral'], ['', 'neutral']]) {
+    // execFileSync throws on a non-zero exit, so a crashing hook fails here.
+    const out = execFileSync('node', [hook, 'prompt'],
+      { input: JSON.stringify({ prompt, session_id: 'test' }), encoding: 'utf8' });
+    assert.ok(out.includes('PONYSTACK PHASE: ' + phase),
+      `${JSON.stringify(prompt)} -> ${JSON.stringify(out.slice(0, 60))}`);
+  }
 });

@@ -177,6 +177,9 @@ const PHASE_RULE = {
     'speculative abstraction, dead flexibility, one-caller layer. One line per ' +
     'finding: location, what to cut, what replaces it. End with ' +
     '`net: -N lines possible.` This is the membrane closing on a wide pass.',
+  neutral:
+    'PONYSTACK PHASE: neutral - no phase rule this turn. The ladder governs ' +
+    'code, not prose or ops.',
 };
 
 // --- the always-on doctrine (SessionStart) ----------------------------------
@@ -231,6 +234,7 @@ async function main() {
   }
 }
 
-if (require.main === module) main();
+// A hook must never break the session: degrade to exit 0 with no output.
+if (require.main === module) main().catch(() => {});
 
 module.exports = { detectPhase, membraneDoctrine, PHASE_RULE };
