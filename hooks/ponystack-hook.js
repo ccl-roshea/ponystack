@@ -123,7 +123,7 @@ function detectPhase(prompt) {
   // Suffix rules so new gstack skills route without a table edit. plan-*-review
   // is a PLAN review (understand), everything else ending in -review is a code
   // review. Order matters, same reason the original comment gave.
-  if (/^plan-.*-review$/.test(cmd)) return 'understand';
+  if (/^plan-(.*-)?review$/.test(cmd)) return 'understand';
   if (/-review$/.test(cmd)) return 'review';
 
   for (const { phase, re } of PROSE_RULES) if (re.test(p)) return phase;

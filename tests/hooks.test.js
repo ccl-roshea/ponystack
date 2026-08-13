@@ -88,3 +88,12 @@ test('phase router: prototype keys are not phases', () => {
       `/${evil} -> ${got}`);
   }
 });
+
+test('phase router: suffix rules catch commands absent from the table', () => {
+  // Reached only when the table misses, which is the whole point of them.
+  assert.equal(detectPhase('/plan-foo-review'), 'understand');  // rule 1 wins
+  assert.equal(detectPhase('/plan-review'), 'understand');      // no middle segment
+  assert.equal(detectPhase('/foo-review'), 'review');           // rule 2
+  assert.equal(detectPhase('/security-review'), 'review');
+  assert.equal(detectPhase('/some-brand-new-skill'), 'neutral');
+});
