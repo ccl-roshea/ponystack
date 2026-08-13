@@ -1,7 +1,8 @@
 # Phase router: correct gstack routing, event-driven escalation, subagent reach
 
 Date: 2026-08-13
-Status: approved, not yet implemented
+Status: implemented on branch `feat/phase-router` - router, escalation, subagent
+inheritance, tests and docs all shipped. Only the live smoke test remains.
 
 ## Problem
 

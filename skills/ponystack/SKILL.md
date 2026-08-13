@@ -35,9 +35,13 @@ and mutes the other:
 | **understand / plan / design / research** | decompose, research, weigh trade-offs | **SILENT** - boil the lake, gstack rules |
 | **implement** | write the code | **MAX** - the ladder, YAGNI |
 | **review** | check the diff | **BOTH** - bugs + a delete-list |
+| **neutral** | ops, tooling, prose | **OUT OF SCOPE** - one line, no opinion |
 
-This is automatic via the SessionStart + UserPromptSubmit hooks. You can force
-it: `/ponystack understand|implement|review`.
+This is automatic via the hooks: the phase is routed on each prompt, escalates
+to implement the first time the turn writes a code file (prose files exempt),
+and is inherited by Task-spawned subagents. Neutral is the default, so an
+unrecognised command gets no opinion instead of the code ladder. You can force
+it: `/ponystack understand|implement|review|neutral`.
 
 ## The ladder (implement phase)
 

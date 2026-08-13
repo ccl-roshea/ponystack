@@ -81,11 +81,33 @@ letting each framework rule only where it is right:
 | understand / plan / design / research | decompose, research, weigh trade-offs | **silent** - boil the lake (gstack) |
 | implement | write the code | **at max** - the ladder, YAGNI (ponytail) |
 | review | check the diff | **both** - bugs + a delete-list |
+| neutral | ops, tooling, prose | **out of scope** - one line, no opinion |
 
-It detects the phase from the gstack command you ran (`/plan-*`, `/spec`,
-`/investigate`, `/design-*` -> understand; `/review`, `/qa`, `/code-review` ->
-review; `/ship` -> implement) plus plain-language cues. A *plan* review stays in
-understand; the lazy senior never deletes a plan.
+Detection is a lookup, not a guess. Sixty gstack commands sit in a table
+(`/spec`, `/investigate`, `/plan-*` -> understand; `/review`, `/qa`,
+`/devex-review` -> review; `/ship`, `/land-and-deploy` -> implement; `/browse`,
+`/freeze`, `/document-generate` -> neutral), resolved in this order: an explicit
+`/ponystack <phase>` beats everything, then the table, then two suffix rules
+(`plan-*-review` -> understand, `*-review` -> review), then plain-language cues,
+then neutral. A *plan* review stays in understand; the lazy senior never deletes
+a plan.
+
+Neutral is the default, and that is the load-bearing choice. Anything the router
+does not recognise - a new gstack skill, a plain question, an ops command - gets
+one short line and no opinion, instead of the code ladder applied to a strategy
+review. The old default was implement, which is how 22 of 40 command probes
+ended up misrouted.
+
+Prompt text is a guess, so two corrections keep it honest:
+
+- **The phase escalates mid-turn.** The first time the model actually writes
+  code in a turn routed anywhere but implement, the ladder is injected at the
+  write itself. Once per turn. Prose is exempt (`.md`, `.txt`, `docs/plans/`,
+  `.gstack/`) - a plan review that writes its plan file has not started
+  implementing.
+- **Subagents inherit the turn's phase.** Without that, a Task-spawned CEO
+  strategy review runs on ponytail's ladder with no counterweight: "shortest
+  working diff, YAGNI, no unrequested abstractions" - applied to strategy.
 
 Three seams hold it together:
 
@@ -172,9 +194,11 @@ tests green and the same architecture - details in [`BOOTSTRAP.md`](BOOTSTRAP.md
 /plugin install ponystack@ponystack
 ```
 
-Two tiny Node.js lifecycle hooks run on session start and on each prompt, so
-`node` must be on your PATH. If it isn't, the skills still work; the always-on
-router just stays quiet instead of erroring.
+Four tiny Node.js lifecycle hooks run - on session start, on each prompt, before
+each file write, and on each subagent start - so `node` must be on your PATH. If
+it isn't, the skills still work; the always-on router just stays quiet instead of
+erroring. The file-write hook never blocks an edit; the worst a bug there can
+cost you is a missing rule.
 
 Nothing is overwritten. ponystack is a separate plugin that lives beside gstack,
 ponytail, or a bare setup.
@@ -183,7 +207,7 @@ ponytail, or a bare setup.
 
 | Command | What it does |
 |---------|--------------|
-| `/ponystack [understand\|implement\|review]` | Show the membrane, or force a phase. |
+| `/ponystack [understand\|implement\|review\|neutral]` | Show the membrane, or force a phase. |
 | `/ponystack-contract` | The contract gate: cut a wide pass to the minimum that works. |
 | `/ponystack-ratio` | Score a session's thinking-to-diff ratio. |
 
