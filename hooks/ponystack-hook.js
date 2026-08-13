@@ -109,9 +109,15 @@ const PROSE_RULES = [
 ];
 
 // "/superpowers:brainstorming" -> "brainstorming". "@office-hours" -> "office-hours".
+// The sigil is REQUIRED: 21 table keys are ordinary English words, so matching
+// bare prose against the table would route "learn how to add X" to neutral and
+// mute the ladder mid-implementation. Prose returns '' and falls to PROSE_RULES.
 function normalizeCommand(prompt) {
   const first = String(prompt || '').trim().split(/\s+/)[0] || '';
-  return first.replace(/^[/@$]/, '').split(':').pop().toLowerCase();
+  if (!/^[/@$]/.test(first)) return '';
+  // ponystack: also strips trailing punctuation ("/devex-review?"), which
+  // otherwise defeats the lookup for exactly the commands this change fixed.
+  return first.slice(1).replace(/[^\w:-]+$/, '').split(':').pop().toLowerCase();
 }
 
 function detectPhase(prompt) {

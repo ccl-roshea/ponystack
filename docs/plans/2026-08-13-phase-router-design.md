@@ -106,9 +106,16 @@ Code sessions would stomp each other. Hence `session_id` keying.
 ## Router
 
 ```js
-const first = String(prompt).trim().split(/\s+/)[0] || '';
-const cmd = first.replace(/^[/@$]/, '').split(':').pop().toLowerCase();
+function normalizeCommand(prompt) {
+  const first = String(prompt || '').trim().split(/\s+/)[0] || '';
+  if (!/^[/@$]/.test(first)) return '';
+  return first.slice(1).replace(/[^\w:-]+$/, '').split(':').pop().toLowerCase();
+}
 ```
+
+The sigil is required. Twenty-one table keys are ordinary English words, so an
+optional sigil let bare prose shadow the prose regexes and mute the ladder
+mid-implementation.
 
 `/superpowers:brainstorming` -> `brainstorming`. `/ponystack:ponystack` -> `ponystack`.
 `/plan-ceo-review` -> itself. The `/devex-review` hyphen bug cannot exist in a lookup.

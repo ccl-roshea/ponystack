@@ -97,3 +97,21 @@ test('phase router: suffix rules catch commands absent from the table', () => {
   assert.equal(detectPhase('/security-review'), 'review');
   assert.equal(detectPhase('/some-brand-new-skill'), 'neutral');
 });
+
+test('phase router: bare prose is not looked up as a command', () => {
+  assert.equal(detectPhase('learn how to add a logout button'), 'implement');
+  assert.equal(detectPhase('guard against null in the parser'), 'implement');
+  assert.equal(detectPhase('freeze the schema and add a migration'), 'implement');
+  assert.equal(detectPhase('scrape that page and write a parser'), 'implement');
+  // Prose that legitimately reads as review still routes there.
+  assert.equal(detectPhase('review this diff'), 'review');
+  // A bare command name still works via the prose alternations.
+  assert.equal(detectPhase('office-hours'), 'understand');
+});
+
+test('phase router: trailing punctuation does not defeat the lookup', () => {
+  assert.equal(detectPhase('/devex-review?'), 'review');
+  assert.equal(detectPhase('/ios-qa,'), 'review');
+  assert.equal(detectPhase('/office-hours.'), 'understand');
+  assert.equal(detectPhase('/superpowers:brainstorming!'), 'understand');
+});
