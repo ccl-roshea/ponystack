@@ -16,6 +16,10 @@
 // Claude Code only for now: the hook writes plain text to stdout, which Claude
 // Code injects as context. ponystack: codex/copilot adapters are a later port.
 
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+
 // --- Seam 1: phase detection -------------------------------------------------
 // Resolution order: /ponystack <phase> override -> exact command lookup ->
 // suffix rules -> prose regex -> neutral.
@@ -205,6 +209,35 @@ function membraneDoctrine() {
   ].join('\n');
 }
 
+// --- per-turn state ----------------------------------------------------------
+// One file per session so two concurrent Claude Code sessions cannot stomp each
+// other's latch. Ponytail uses a single global flag file, which is fine for a
+// sticky mode and wrong for per-turn state.
+
+function statePath(sessionId) {
+  // Trust boundary: session_id arrives from the hook payload and is interpolated
+  // into a filesystem path. Without this sanitize, a crafted id escapes tmpdir.
+  const sid = String(sessionId || '').replace(/[^A-Za-z0-9_-]/g, '') || 'default';
+  return path.join(os.tmpdir(), `ponystack-${sid}.json`);
+}
+
+function readState(sessionId) {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(statePath(sessionId), 'utf8'));
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function writeState(sessionId, state) {
+  // ponystack: best-effort. A hook must never break the session, so a failed
+  // write degrades to "no escalation this turn" rather than throwing.
+  try {
+    fs.writeFileSync(statePath(sessionId), JSON.stringify(state));
+  } catch (e) { /* intentionally silent */ }
+}
+
 // --- main --------------------------------------------------------------------
 function readStdin() {
   return new Promise((resolve) => {
@@ -237,4 +270,5 @@ async function main() {
 // A hook must never break the session: degrade to exit 0 with no output.
 if (require.main === module) main().catch(() => {});
 
-module.exports = { detectPhase, membraneDoctrine, PHASE_RULE };
+module.exports = { detectPhase, membraneDoctrine, PHASE_RULE,
+  statePath, readState, writeState };

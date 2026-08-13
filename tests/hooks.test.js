@@ -3,8 +3,10 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
-const { detectPhase, membraneDoctrine, PHASE_RULE } = require('../hooks/ponystack-hook.js');
+const { detectPhase, membraneDoctrine, PHASE_RULE,
+  statePath, readState, writeState } = require('../hooks/ponystack-hook.js');
 
 const root = path.join(__dirname, '..');
 
@@ -141,6 +143,36 @@ test('phase router: /ponystack <phase> forces that phase', () => {
   assert.equal(detectPhase('/ponystack understand how to build the parser'), 'understand');
   assert.equal(detectPhase('/ponystack understand, then implement the fix'), 'understand');
   assert.equal(detectPhase('/ponystack neutral fix the crash and ship it'), 'neutral');
+});
+
+test('state: round-trips, and a missing file returns null not a throw', () => {
+  const sid = 'test-session-' + process.pid;
+  assert.equal(readState('no-such-session-' + process.pid), null);
+  writeState(sid, { phase: 'understand', latched: false });
+  assert.deepEqual(readState(sid), { phase: 'understand', latched: false });
+  writeState(sid, { phase: 'understand', latched: true });
+  assert.equal(readState(sid).latched, true);
+  fs.unlinkSync(statePath(sid));
+});
+
+test('state: session_id is a trust boundary and cannot escape tmpdir', () => {
+  for (const evil of ['../../etc/passwd', '../../../root/.ssh/authorized_keys',
+    '/etc/shadow', 'a/b/c', '..', '', null, undefined]) {
+    const p = statePath(evil);
+    assert.ok(p.startsWith(os.tmpdir() + path.sep), `escaped tmpdir: ${evil} -> ${p}`);
+    assert.ok(!p.includes('..'), `traversal survived: ${evil} -> ${p}`);
+  }
+});
+
+test('state: a corrupt state file reads as null, not a throw', () => {
+  const sid = 'corrupt-' + process.pid;
+  fs.writeFileSync(statePath(sid), 'not json at all {{{');
+  assert.equal(readState(sid), null);
+  fs.writeFileSync(statePath(sid), 'null');
+  assert.equal(readState(sid), null, 'literal null is not an object');
+  fs.writeFileSync(statePath(sid), '"a string"');
+  assert.equal(readState(sid), null, 'a bare string is not state');
+  fs.unlinkSync(statePath(sid));
 });
 
 test('hook: every phase emits its rule without crashing', () => {
