@@ -153,11 +153,14 @@ Two entries are judgment, not transcription:
 So new gstack skills route correctly without a table edit:
 
 ```
-/^plan-.*-review$/  -> understand   (plan review, not code review)
-/-review$/          -> review
+/^plan-(.*-)?review$/  -> understand   (plan review, not code review)
+/-review$/             -> review
 ```
 
-Order matters exactly as the existing code comment already explains.
+The middle segment is optional so that bare `/plan-review` routes to understand.
+It is not `/^plan-.*review$/`, which would also swallow `/plan-preview`.
+
+Order matters: understand before review, so a plan review is not read as a code review.
 
 ### Override
 

@@ -19,7 +19,9 @@
 // --- Seam 1: phase detection -------------------------------------------------
 // Resolution order: exact command lookup -> suffix rules -> prose regex -> neutral.
 // The lookup replaces regex alternation because alternation is what produced the
-// bugs: /devex-review missed on a hyphen, /ponystack understand inverted itself.
+// bugs: /devex-review missed on a hyphen, since the review pattern anchored on
+// (^|\s)[/@]?review. The /ponystack <phase> override is NOT handled here yet;
+// it still inverts itself, and Task 3 owns that fix.
 
 const COMMAND_PHASE = {
   // understand: plan, design, research, diagnose. No code yet.
@@ -128,7 +130,11 @@ function detectPhase(prompt) {
 
   // Suffix rules so new gstack skills route without a table edit. plan-*-review
   // is a PLAN review (understand), everything else ending in -review is a code
-  // review. Order matters, same reason the original comment gave.
+  // review. Order matters: understand before review so a plan review is not read
+  // as a code review.
+  // ponystack: naive heuristic. Ceiling: it only sees names ending in -review, so
+  // a new skill named anything else is invisible and falls through to neutral.
+  // Upgrade path: add that skill to COMMAND_PHASE.
   if (/^plan-(.*-)?review$/.test(cmd)) return 'understand';
   if (/-review$/.test(cmd)) return 'review';
 
