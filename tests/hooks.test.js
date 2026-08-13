@@ -100,9 +100,15 @@ test('phase router: suffix rules catch commands absent from the table', () => {
 
 test('phase router: bare prose is not looked up as a command', () => {
   assert.equal(detectPhase('learn how to add a logout button'), 'implement');
-  assert.equal(detectPhase('guard against null in the parser'), 'implement');
   assert.equal(detectPhase('freeze the schema and add a migration'), 'implement');
   assert.equal(detectPhase('scrape that page and write a parser'), 'implement');
+  assert.equal(detectPhase('browse the docs then implement the client'), 'implement');
+  // Prose carrying no verb the implement regex covers lands on neutral. That is
+  // the new default doing its job, not the sigil gate failing: under the old
+  // router these reached implement via the old implement DEFAULT, not by match.
+  // Task 6's escalation still hands them the ladder on the first code edit.
+  assert.equal(detectPhase('guard against null in the parser'), 'neutral');
+  assert.equal(detectPhase('careful now, delete the old module'), 'neutral');
   // Prose that legitimately reads as review still routes there.
   assert.equal(detectPhase('review this diff'), 'review');
   // A bare command name still works via the prose alternations.
