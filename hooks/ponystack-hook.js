@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 // ponystack - the membrane between an expensive brain and cheap hands.
 //
-// One file, two hook entries (dispatched by argv[2]):
+// One file, four hook entries (dispatched by argv[2]):
 //   session  → SessionStart: emit the membrane doctrine once.
 //   prompt   → UserPromptSubmit: detect the work PHASE and emit the rule that
 //              governs the lazy senior for this turn (Seam 1: PHASE-ROUTER).
+//   pretool  → PreToolUse: the prompt-text guess was wrong and real code is
+//              being written - inject the ladder once (Seam 1b).
+//   subagent → SubagentStart: hand the parent turn's phase to Task-spawned
+//              agents, which otherwise get ponytail's ladder uncountered.
 //
 // Phase routing is the whole trick: gstack and ponytail both want to inject
 // rules every turn and would contradict each other. The router mutes whichever
@@ -273,19 +277,60 @@ function readStdin() {
   });
 }
 
+// --- output ------------------------------------------------------------------
+// Native Claude accepts raw stdout on SessionStart and UserPromptSubmit, but
+// DROPS context on PreToolUse and SubagentStart unless it is wrapped in
+// hookSpecificOutput. Source: ponytail-runtime.js:67-74.
+function emitContext(event, text, extra) {
+  const out = { hookEventName: event, additionalContext: text };
+  if (extra) Object.assign(out, extra);
+  process.stdout.write(JSON.stringify({ hookSpecificOutput: out }));
+}
+
+async function readPayload() {
+  try {
+    const raw = (await readStdin()).replace(/^﻿/, '');
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};  // ponystack: bad/empty stdin degrades to no-op, never a throw
+  }
+}
+
 async function main() {
   const mode = process.argv[2];
+
   if (mode === 'session') {
     process.stdout.write(membraneDoctrine());
     return;
   }
+
+  const payload = await readPayload();
+
   if (mode === 'prompt') {
-    let prompt = '';
-    try {
-      const raw = (await readStdin()).replace(/^﻿/, '');
-      prompt = raw ? (JSON.parse(raw).prompt || '') : '';
-    } catch (e) { /* ponystack: bad/empty stdin → default phase */ }
-    process.stdout.write(PHASE_RULE[detectPhase(prompt)]);
+    const phase = detectPhase(payload.prompt || '');
+    writeState(payload.session_id, { phase, latched: false });
+    process.stdout.write(PHASE_RULE[phase]);
+    return;
+  }
+
+  if (mode === 'pretool') {
+    const st = readState(payload.session_id);
+    if (!st) return;
+    const file = (payload.tool_input && payload.tool_input.file_path) || '';
+    if (!shouldEscalate(st.phase, st.latched, file)) return;
+    writeState(payload.session_id, { phase: st.phase, latched: true });
+    // Never 'deny'. This hook sits in front of every file write in every
+    // session; a bug here must cost a missing rule, never a blocked edit.
+    emitContext('PreToolUse', PHASE_RULE.implement, { permissionDecision: 'defer' });
+    return;
+  }
+
+  if (mode === 'subagent') {
+    const st = readState(payload.session_id);
+    // hasOwn, not a truthy lookup: st.phase comes off disk, and a crafted
+    // "constructor" would otherwise emit a function. Same guard as detectPhase.
+    if (!st || !Object.hasOwn(PHASE_RULE, st.phase)) return;
+    emitContext('SubagentStart', PHASE_RULE[st.phase]);
   }
 }
 

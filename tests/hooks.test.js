@@ -211,3 +211,66 @@ test('hook: every phase emits its rule without crashing', () => {
       `${JSON.stringify(prompt)} -> ${JSON.stringify(out.slice(0, 60))}`);
   }
 });
+
+function runHook(mode, payload) {
+  const { execFileSync } = require('child_process');
+  return execFileSync('node', [path.join(root, 'hooks/ponystack-hook.js'), mode],
+    { input: JSON.stringify(payload), encoding: 'utf8' });
+}
+
+test('dispatch: prompt records phase, pretool escalates once, subagent inherits', () => {
+  const sid = 'dispatch-' + process.pid;
+  try {
+    // A turn routed to understand.
+    assert.ok(runHook('prompt', { prompt: '/office-hours', session_id: sid })
+      .includes('PONYSTACK PHASE: understand'));
+    assert.deepEqual(readState(sid), { phase: 'understand', latched: false });
+
+    // A subagent spawned in that turn inherits understand, wrapped for the event.
+    const sub = JSON.parse(runHook('subagent', { session_id: sid, agent_type: 'Explore' }));
+    assert.equal(sub.hookSpecificOutput.hookEventName, 'SubagentStart');
+    assert.ok(sub.hookSpecificOutput.additionalContext.includes('PONYSTACK PHASE: understand'));
+
+    // First real code write escalates, and must defer rather than deny.
+    const esc = JSON.parse(runHook('pretool',
+      { session_id: sid, tool_input: { file_path: 'src/a.js' } }));
+    assert.equal(esc.hookSpecificOutput.hookEventName, 'PreToolUse');
+    assert.equal(esc.hookSpecificOutput.permissionDecision, 'defer');
+    assert.ok(esc.hookSpecificOutput.additionalContext.includes('PONYSTACK PHASE: implement'));
+    assert.equal(readState(sid).latched, true);
+
+    // Second write in the same turn says nothing.
+    assert.equal(runHook('pretool',
+      { session_id: sid, tool_input: { file_path: 'src/b.js' } }), '');
+  } finally {
+    try { fs.unlinkSync(statePath(sid)); } catch (e) {}
+  }
+});
+
+test('dispatch: the autoplan case does not misfire', () => {
+  const sid = 'autoplan-' + process.pid;
+  try {
+    runHook('prompt', { prompt: '/autoplan', session_id: sid });
+    assert.equal(readState(sid).phase, 'understand');
+    // /autoplan's only file write is its plan markdown. Escalating there would
+    // be wrong 100% of the time it fired.
+    assert.equal(runHook('pretool',
+      { session_id: sid, tool_input: { file_path: 'docs/plans/x.md' } }), '');
+    assert.equal(readState(sid).latched, false, 'latch must not burn on prose');
+  } finally {
+    try { fs.unlinkSync(statePath(sid)); } catch (e) {}
+  }
+});
+
+test('dispatch: no state, junk stdin, and unknown modes are all silent no-ops', () => {
+  assert.equal(runHook('pretool',
+    { session_id: 'never-seen-' + process.pid, tool_input: { file_path: 'a.js' } }), '');
+  assert.equal(runHook('subagent', { session_id: 'never-seen-' + process.pid }), '');
+  const { execFileSync } = require('child_process');
+  const hook = path.join(root, 'hooks/ponystack-hook.js');
+  // Malformed stdin must not throw; execFileSync would fail on a non-zero exit.
+  assert.equal(execFileSync('node', [hook, 'pretool'],
+    { input: 'not json{{{', encoding: 'utf8' }), '');
+  assert.equal(execFileSync('node', [hook, 'bogus-mode'],
+    { input: '{}', encoding: 'utf8' }), '');
+});
