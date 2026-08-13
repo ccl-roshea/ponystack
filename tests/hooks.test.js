@@ -47,7 +47,15 @@ test('manifests and hooks are valid JSON', () => {
     assert.doesNotThrow(() => JSON.parse(fs.readFileSync(path.join(root, f), 'utf8')), f);
   }
   const hooks = JSON.parse(fs.readFileSync(path.join(root, 'hooks/hooks.json'), 'utf8'));
-  assert.ok(hooks.hooks.SessionStart && hooks.hooks.UserPromptSubmit, 'both hook events wired');
+  for (const ev of ['SessionStart', 'UserPromptSubmit', 'PreToolUse', 'SubagentStart']) {
+    assert.ok(hooks.hooks[ev], `${ev} wired`);
+  }
+  assert.equal(hooks.hooks.PreToolUse[0].matcher, 'Edit|Write|NotebookEdit',
+    'PreToolUse must be scoped to writes, not every tool call');
+  const cmds = JSON.stringify(hooks.hooks);
+  for (const m of ['session', 'prompt', 'pretool', 'subagent']) {
+    assert.ok(cmds.includes(`ponystack-hook.js\\" ${m}`), `${m} mode dispatched`);
+  }
 });
 
 test('phase router: every gstack command maps to its designed phase', () => {
