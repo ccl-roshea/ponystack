@@ -318,7 +318,10 @@ async function main() {
     if (!st) return;
     const file = (payload.tool_input && payload.tool_input.file_path) || '';
     if (!shouldEscalate(st.phase, st.latched, file)) return;
-    writeState(payload.session_id, { phase: st.phase, latched: true });
+    // Escalation is the correction, so persist it. Otherwise a subagent spawned
+    // after this write inherits the router's stale guess and gets told not to
+    // write production code while the parent is already writing it.
+    writeState(payload.session_id, { phase: 'implement', latched: true });
     // Never 'deny'. This hook sits in front of every file write in every
     // session; a bug here must cost a missing rule, never a blocked edit.
     emitContext('PreToolUse', PHASE_RULE.implement, { permissionDecision: 'defer' });

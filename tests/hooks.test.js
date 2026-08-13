@@ -245,11 +245,25 @@ test('dispatch: prompt records phase, pretool escalates once, subagent inherits'
     assert.equal(esc.hookSpecificOutput.hookEventName, 'PreToolUse');
     assert.equal(esc.hookSpecificOutput.permissionDecision, 'defer');
     assert.ok(esc.hookSpecificOutput.additionalContext.includes('PONYSTACK PHASE: implement'));
-    assert.equal(readState(sid).latched, true);
+    // Escalation is the correction, so the stored phase moves too, not just the latch.
+    assert.deepEqual(readState(sid), { phase: 'implement', latched: true });
 
-    // Second write in the same turn says nothing.
+    // A subagent spawned AFTER the escalation must inherit implement. Handing it
+    // "do NOT write production code yet" while the parent is already writing code
+    // is the inversion this feature exists to prevent, moved down one level.
+    const subAfter = JSON.parse(runHook('subagent', { session_id: sid, agent_type: 'Explore' }));
+    assert.ok(subAfter.hookSpecificOutput.additionalContext.includes('PONYSTACK PHASE: implement'),
+      subAfter.hookSpecificOutput.additionalContext.slice(0, 70));
+
+    // Second write in the same turn says nothing. Now blocked twice over:
+    // phase === 'implement' and latched === true, either alone sufficient.
     assert.equal(runHook('pretool',
       { session_id: sid, tool_input: { file_path: 'src/b.js' } }), '');
+
+    // The next turn re-routes from scratch: prompt overwrites the whole object,
+    // so an escalated phase cannot leak forward into it.
+    runHook('prompt', { prompt: '/office-hours', session_id: sid });
+    assert.deepEqual(readState(sid), { phase: 'understand', latched: false });
   } finally {
     try { fs.unlinkSync(statePath(sid)); } catch (e) {}
   }
