@@ -19,6 +19,10 @@ Work has phases. Let the right discipline drive each one:
 - **review** - run both critics: correctness/security/perf bugs, AND a
   delete-list of everything that does not earn its lines, ending
   `net: -N lines possible.`
+- **neutral** - ops, tooling, prose. No phase discipline applies; the ladder
+  governs code, not a package upgrade or a doc. This is the router's default,
+  so an unrecognised command costs you one line and no opinion rather than the
+  wrong discipline.
 
 Never simplify away: trust-boundary input validation, error handling that
 prevents data loss, security, accessibility, anything explicitly requested.
