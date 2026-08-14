@@ -1,5 +1,50 @@
 # Benchmark
 
+There are two, and they measure different halves of ponystack. Do not quote one
+for the other's claim.
+
+| Benchmark | Measures | Cost |
+|-----------|----------|------|
+| **doctrine** (this file, `promptfooconfig.yaml` / `run-local.js`) | Does the implement-phase doctrine produce less code without breaking correctness? | API calls |
+| **routing** (`routing.js`) | Given a prompt, does the router pick the phase a developer would? Does escalation fire on code and stay quiet on prose? | free, milliseconds |
+
+The doctrine benchmark **bypasses the router entirely** — it injects
+`skills/ponystack/SKILL.md` as a system prompt for single-shot completions, so
+there is no turn, no hook, and no phase to route. That is deliberate and stated
+in `arms/ponystack.js`. It means a change to the router is invisible here, and a
+change to `SKILL.md` shows up here whether or not you intended it to.
+
+## Routing benchmark
+
+```bash
+npm run bench:routing         # this branch vs git master, before/after
+node benchmarks/routing.js    # score the working tree only
+node benchmarks/routing.js path/to/some-hook.js
+```
+
+Ground truth is `routing-corpus.js`, in four sections plus an escalation corpus.
+**Quote the NON-CIRCULAR number.** The `commands` section encodes the same
+intended mapping as the hook's own table, so any hook that has that table scores
+~100% on it by construction; its honest use is scoring a hook that does not.
+
+The corpus deliberately contains cases the current implementation FAILS, marked
+`expectMiss`. Do not delete them to make the score prettier — a benchmark you
+always score 100% on has stopped measuring anything. Exit code is non-zero only
+on an *unexpected* miss, so it is usable in CI.
+
+Result for the four-phase router (`node benchmarks/routing.js --compare`):
+
+```
+NON-CIRCULAR:  39% -> 97%  (+57 points, 35 more of 61 correct)
+escalation:    absent -> 14/14
+```
+
+The before number is not a strawman: the old router got ordinary conversation
+("tell me a joke", "I restarted claude") wrong because its default was
+`implement`, and `/ponystack understand` emitted the *implement* rule.
+
+## Doctrine benchmark
+
 Three arms, same model, same tasks: a no-skill **baseline**, **gstack** (its own
 `ETHOS.md` as the system prompt), and **ponystack**. We measure code size
 (deterministic) and correctness (a gate). The claim is simple: ponystack writes
