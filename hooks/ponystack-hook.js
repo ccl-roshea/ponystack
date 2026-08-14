@@ -101,12 +101,20 @@ const COMMAND_PHASE = {
   'ponystack-ratio': 'neutral',
 };
 
-// Prose fallback. Unchanged from the original router: every bug was in the
-// command alternations, not these natural-language patterns.
+// Prose fallback, for a command name mentioned without its sigil and for plain
+// natural language. A name listed here must agree with COMMAND_PHASE; the guard
+// test in tests/hooks.test.js enforces that, because the two lists drifting is
+// how /design-html ended up routing to understand while the table said implement.
 const PROSE_RULES = [
   {
     phase: 'understand',
-    re: /(^|\s)[/@]?(office-hours|spec|plan|plan-[a-z-]+|autoplan|design-consultation|design-shotgun|design-html|investigate|brainstorm)\b|\b(how should (i|we)|let'?s (plan|design|think|explore|brainstorm)|research this|architect this|trade-?offs?|figure out|root cause|understand the)\b/i,
+    // design-html removed: it generates production HTML/CSS, so the table calls
+    // it implement and listing it here contradicted that.
+    // ponystack: `plan` and `plan-[a-z-]+` still catch plan-tune, which the
+    // table calls neutral. Accepted rather than fixed: narrowing them would
+    // break "what's the plan here", and nobody writes plan-tune in bare prose.
+    // The guard test does not see it because it is matched by pattern, not name.
+    re: /(^|\s)[/@]?(office-hours|spec|plan|plan-[a-z-]+|autoplan|design-consultation|design-shotgun|investigate|brainstorm)\b|\b(how should (i|we)|let'?s (plan|design|think|explore|brainstorm)|research this|architect this|trade-?offs?|figure out|root cause|understand the)\b/i,
   },
   {
     phase: 'review',
@@ -341,4 +349,7 @@ async function main() {
 if (require.main === module) main().catch(() => {});
 
 module.exports = { detectPhase, membraneDoctrine, PHASE_RULE,
-  statePath, readState, writeState, shouldEscalate };
+  statePath, readState, writeState, shouldEscalate,
+  // Exported so the guard test can derive the command names literally listed in
+  // PROSE_RULES and assert none of them contradicts the table.
+  COMMAND_PHASE, PROSE_RULES };

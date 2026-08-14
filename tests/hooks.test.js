@@ -6,7 +6,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { detectPhase, membraneDoctrine, PHASE_RULE,
-  statePath, readState, writeState, shouldEscalate } = require('../hooks/ponystack-hook.js');
+  statePath, readState, writeState, shouldEscalate,
+  COMMAND_PHASE, PROSE_RULES } = require('../hooks/ponystack-hook.js');
 
 const root = path.join(__dirname, '..');
 
@@ -295,4 +296,40 @@ test('dispatch: no state, junk stdin, and unknown modes are all silent no-ops', 
     { input: 'not json{{{', encoding: 'utf8' }), '');
   assert.equal(execFileSync('node', [hook, 'bogus-mode'],
     { input: '{}', encoding: 'utf8' }), '');
+});
+
+// The guard. PROSE_RULES and COMMAND_PHASE are two hand-maintained lists of the
+// same command names, and drift between them is invisible in normal use: the
+// table wins for "/x ...", the prose rule wins for a bare or mid-sentence
+// mention. That is exactly how /design-html routed to understand for months
+// while the table said implement. This makes the whole class unshippable.
+test('guard: no command name in PROSE_RULES contradicts the table', () => {
+  // Pull the literal command names out of each rule's leading alternation, the
+  // `(^|\s)[/@]?(a|b|c)\b` group. Pattern entries like plan-[a-z-]+ carry regex
+  // metacharacters and are skipped: they match by shape, not by name.
+  const literalNames = (re) => {
+    const group = /\(\^\|\\s\)\[\/@\]\?\(([^)]*)\)/.exec(re.source);
+    return group ? group[1].split('|').filter((n) => /^[a-z][a-z-]*$/.test(n)) : [];
+  };
+
+  const checked = [];
+  for (const { phase, re } of PROSE_RULES) {
+    for (const name of literalNames(re)) {
+      if (!Object.hasOwn(COMMAND_PHASE, name)) continue;  // not a real command
+      checked.push(name);
+      assert.equal(COMMAND_PHASE[name], phase,
+        `PROSE_RULES lists "${name}" under ${phase} but the table says ` +
+        `${COMMAND_PHASE[name]}. Fix one of them; they cannot disagree.`);
+      // And the divergence users actually hit: bare, and mid-sentence.
+      assert.equal(detectPhase(name), COMMAND_PHASE[name], `bare "${name}"`);
+      assert.equal(detectPhase(`please run /${name} now`), COMMAND_PHASE[name],
+        `mid-sentence "/${name}"`);
+    }
+  }
+
+  // If the extractor silently stops matching, every assertion above vanishes
+  // and the test passes green forever. Pin that it found real work to do.
+  assert.ok(checked.length >= 10,
+    `guard only checked ${checked.length} names (${checked}); the extractor ` +
+    'probably stopped matching the alternation shape');
 });
