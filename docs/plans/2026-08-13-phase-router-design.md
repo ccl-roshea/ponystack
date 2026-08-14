@@ -1,8 +1,25 @@
 # Phase router: correct gstack routing, event-driven escalation, subagent reach
 
 Date: 2026-08-13
-Status: implemented on branch `feat/phase-router` - router, escalation, subagent
-inheritance, tests and docs all shipped. Only the live smoke test remains.
+Status: COMPLETE on branch `feat/phase-router`. Router, escalation, subagent
+inheritance, tests and docs shipped; live smoke test passed 2026-08-14.
+
+## Live verification, 2026-08-14
+
+Run against the installed plugin in a real Claude Code session (session
+`e9374aad-...`, preserved across `claude --resume`). Every check observed
+directly, not inferred from unit tests.
+
+| Check | Result |
+|---|---|
+| Neutral default | The prompt "I restarted claude" routed to `PONYSTACK PHASE: neutral`. Before this branch the same message hit the `implement` default and got the code ladder. |
+| Prose exemption | A `.md` write produced no hook context and left state at `{"phase":"neutral","latched":false}`. The latch did not burn. This is the `/autoplan` case. |
+| Subagent inheritance | A subagent, asked to report its own injected context, quoted back `PONYSTACK PHASE: neutral - no phase rule this turn.` It also confirmed `PONYTAIL MODE ACTIVE - level: full` was present, which is exactly the imbalance this fixes: subagents previously got ponytail's ladder with no ponystack counterweight at all. |
+| Mid-turn escalation | A `.js` write fired `PreToolUse:Write hook additional context: PONYSTACK PHASE: implement - lazy senior at MAX...` |
+| Latch | A second `.js` write in the same turn produced no hook context. |
+| Escalation composes with inheritance | A subagent spawned after the escalation quoted back the **implement** rule, not the stale `neutral`. |
+
+Final state `{"phase":"implement","latched":true}`. Suite 20/20.
 
 ## Problem
 
