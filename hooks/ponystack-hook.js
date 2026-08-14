@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 // ponystack - the membrane between an expensive brain and cheap hands.
 //
-// One file, two hook entries (dispatched by argv[2]):
+// One file, four hook entries (dispatched by argv[2]):
 //   session  → SessionStart: emit the membrane doctrine once.
 //   prompt   → UserPromptSubmit: detect the work PHASE and emit the rule that
 //              governs the lazy senior for this turn (Seam 1: PHASE-ROUTER).
+//   pretool  → PreToolUse: the prompt-text guess was wrong and real code is
+//              being written - inject the ladder once (Seam 1b).
+//   subagent → SubagentStart: hand the parent turn's phase to Task-spawned
+//              agents, which otherwise get ponytail's ladder uncountered.
 //
 // Phase routing is the whole trick: gstack and ponytail both want to inject
 // rules every turn and would contradict each other. The router mutes whichever
@@ -16,14 +20,101 @@
 // Claude Code only for now: the hook writes plain text to stdout, which Claude
 // Code injects as context. ponystack: codex/copilot adapters are a later port.
 
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+
 // --- Seam 1: phase detection -------------------------------------------------
-// Ordered, first match wins. understand BEFORE review so a plan review
-// (/plan-ceo-review) routes to planning, not code review; review BEFORE
-// implement so "review this diff" never reads as "implement".
-const PHASE_RULES = [
+// Resolution order: /ponystack <phase> override -> exact command lookup ->
+// suffix rules -> prose regex -> neutral.
+// The lookup replaces regex alternation because alternation is what produced the
+// bugs: /devex-review missed on a hyphen, since the review pattern anchored on
+// (^|\s)[/@]?review.
+
+const COMMAND_PHASE = {
+  // understand: plan, design, research, diagnose. No code yet.
+  'office-hours': 'understand',
+  spec: 'understand',
+  autoplan: 'understand',
+  'plan-ceo-review': 'understand',
+  'plan-design-review': 'understand',
+  'plan-devex-review': 'understand',
+  'plan-eng-review': 'understand',
+  'design-consultation': 'understand',
+  'design-shotgun': 'understand',
+  investigate: 'understand',
+  retro: 'understand',
+  brainstorm: 'understand',
+  brainstorming: 'understand',
+  'writing-plans': 'understand',
+
+  // review: critique something that already exists.
+  review: 'review',
+  qa: 'review',
+  'qa-only': 'review',
+  'design-review': 'review',
+  'devex-review': 'review',
+  canary: 'review',           // post-deploy monitoring: verifies what shipped
+  benchmark: 'review',        // perf regression detection: verifies what shipped
+  'benchmark-models': 'review',
+  codex: 'review',
+  cso: 'review',
+  health: 'review',
+  'ios-design-review': 'review',
+  'ios-qa': 'review',
+  'ponystack-contract': 'review',
+  'ponytail-review': 'review',
+
+  // implement: writes code.
+  ship: 'implement',
+  'land-and-deploy': 'implement',
+  'setup-deploy': 'implement',
+  'design-html': 'implement',
+  'ios-fix': 'implement',
+  'ios-clean': 'implement',
+  'ios-sync': 'implement',
+  skillify: 'implement',
+
+  // neutral: ops, tooling, prose. The ladder governs code, not these.
+  browse: 'neutral',
+  'connect-chrome': 'neutral',
+  'open-gstack-browser': 'neutral',
+  'pair-agent': 'neutral',
+  scrape: 'neutral',
+  'setup-browser-cookies': 'neutral',
+  careful: 'neutral',
+  freeze: 'neutral',
+  guard: 'neutral',
+  unfreeze: 'neutral',
+  'context-save': 'neutral',
+  'context-restore': 'neutral',
+  learn: 'neutral',
+  'gstack-upgrade': 'neutral',
+  'sync-gbrain': 'neutral',
+  'setup-gbrain': 'neutral',
+  'document-generate': 'neutral',  // prose, not code
+  'document-release': 'neutral',   // prose, not code
+  'make-pdf': 'neutral',
+  diagram: 'neutral',
+  'landing-report': 'neutral',
+  'plan-tune': 'neutral',
+  'ponystack-ratio': 'neutral',
+};
+
+// Prose fallback, for a command name mentioned without its sigil and for plain
+// natural language. A name listed here must agree with COMMAND_PHASE; the guard
+// test in tests/hooks.test.js enforces that, because the two lists drifting is
+// how /design-html ended up routing to understand while the table said implement.
+const PROSE_RULES = [
   {
     phase: 'understand',
-    re: /(^|\s)[/@]?(office-hours|spec|plan|plan-[a-z-]+|autoplan|design-consultation|design-shotgun|design-html|investigate|brainstorm)\b|\b(how should (i|we)|let'?s (plan|design|think|explore|brainstorm)|research this|architect this|trade-?offs?|figure out|root cause|understand the)\b/i,
+    // design-html removed: it generates production HTML/CSS, so the table calls
+    // it implement and listing it here contradicted that.
+    // ponystack: `plan` and `plan-[a-z-]+` still catch plan-tune, which the
+    // table calls neutral. Accepted rather than fixed: narrowing them would
+    // break "what's the plan here", and nobody writes plan-tune in bare prose.
+    // The guard test does not see it because it is matched by pattern, not name.
+    re: /(^|\s)[/@]?(office-hours|spec|plan|plan-[a-z-]+|autoplan|design-consultation|design-shotgun|investigate|brainstorm)\b|\b(how should (i|we)|let'?s (plan|design|think|explore|brainstorm)|research this|architect this|trade-?offs?|figure out|root cause|understand the)\b/i,
   },
   {
     phase: 'review',
@@ -35,12 +126,71 @@ const PHASE_RULES = [
   },
 ];
 
+// "/superpowers:brainstorming" -> "brainstorming". "@office-hours" -> "office-hours".
+// The sigil is REQUIRED: 21 table keys are ordinary English words, so matching
+// bare prose against the table would route "learn how to add X" to neutral and
+// mute the ladder mid-implementation. Prose returns '' and falls to PROSE_RULES.
+function normalizeCommand(prompt) {
+  const first = String(prompt || '').trim().split(/\s+/)[0] || '';
+  if (!/^[/@$]/.test(first)) return '';
+  // ponystack: also strips trailing punctuation ("/devex-review?"), which
+  // otherwise defeats the lookup for exactly the commands this change fixed.
+  return first.slice(1).replace(/[^\w:-]+$/, '').split(':').pop().toLowerCase();
+}
+
 function detectPhase(prompt) {
   const p = String(prompt || '');
-  for (const { phase, re } of PHASE_RULES) if (re.test(p)) return phase;
-  // ponystack: default to membrane-on. The ladder governs built CODE, not
-  // prose, so a plain question in "implement" phase still answers freely.
-  return 'implement';
+  const cmd = normalizeCommand(p);
+
+  // The documented override, which had never worked: bare 'understand' matched
+  // no pattern and fell through to the default. Must precede the PROSE RULES --
+  // without that, "/ponystack understand, then implement the fix" routes to
+  // implement off the user's own trailing words, inverting the override.
+  if (cmd === 'ponystack') {
+    const arg = p.trim().split(/\s+/)[1]?.replace(/[^\w]+$/, '').toLowerCase();
+    if (arg && Object.hasOwn(PHASE_RULE, arg)) return arg;
+  }
+
+  if (Object.hasOwn(COMMAND_PHASE, cmd)) return COMMAND_PHASE[cmd];
+
+  // Suffix rules so new gstack skills route without a table edit. plan-*-review
+  // is a PLAN review (understand), everything else ending in -review is a code
+  // review. Order matters: understand before review so a plan review is not read
+  // as a code review.
+  // ponystack: naive heuristic. Ceiling: it only sees names ending in -review, so
+  // a new skill named anything else is invisible and falls through to neutral.
+  // Upgrade path: add that skill to COMMAND_PHASE.
+  if (/^plan-(.*-)?review$/.test(cmd)) return 'understand';
+  if (/-review$/.test(cmd)) return 'review';
+
+  for (const { phase, re } of PROSE_RULES) if (re.test(p)) return phase;
+
+  // Unknown lands on neutral, not implement. When gstack ships a new skill the
+  // failure mode is "one short line and no opinion", not "code ladder applied to
+  // a strategy review".
+  return 'neutral';
+}
+
+// --- Seam 1b: mid-turn escalation --------------------------------------------
+// The phase is routed from prompt text, which is a guess. This is the
+// correction: when the model actually writes code, the ladder applies
+// regardless of what the prompt looked like.
+
+const PROSE_FILE = /\.(md|markdown|txt|rst|adoc)$/i;
+const PROSE_DIR = /(^|[\\/])(docs[\\/]plans|\.gstack|\.claude[\\/]plans)([\\/]|$)/;
+
+function shouldEscalate(phase, latched, filePath) {
+  if (!phase || phase === 'implement') return false;  // ladder already in context
+  if (latched) return false;                          // already fired this turn
+  const f = String(filePath || '');
+  if (!f) return false;                               // no path, no judgement
+  // ponystack: extension + path heuristic. /autoplan is a review pipeline whose
+  // only write is the plan markdown, so escalating on prose would be wrong 100%
+  // of the time it fired there. Upgrade path: the Task 1 probe found
+  // permission_mode in the UserPromptSubmit payload, so a future version can
+  // record plan-mode state instead of guessing from the filename.
+  if (PROSE_FILE.test(f) || PROSE_DIR.test(f)) return false;
+  return true;
 }
 
 // --- the rule emitted per phase ---------------------------------------------
@@ -65,6 +215,9 @@ const PHASE_RULE = {
     'speculative abstraction, dead flexibility, one-caller layer. One line per ' +
     'finding: location, what to cut, what replaces it. End with ' +
     '`net: -N lines possible.` This is the membrane closing on a wide pass.',
+  neutral:
+    'PONYSTACK PHASE: neutral - no phase rule this turn. The ladder governs ' +
+    'code, not prose or ops.',
 };
 
 // --- the always-on doctrine (SessionStart) ----------------------------------
@@ -90,6 +243,35 @@ function membraneDoctrine() {
   ].join('\n');
 }
 
+// --- per-turn state ----------------------------------------------------------
+// One file per session so two concurrent Claude Code sessions cannot stomp each
+// other's latch. Ponytail uses a single global flag file, which is fine for a
+// sticky mode and wrong for per-turn state.
+
+function statePath(sessionId) {
+  // Trust boundary: session_id arrives from the hook payload and is interpolated
+  // into a filesystem path. Without this sanitize, a crafted id escapes tmpdir.
+  const sid = String(sessionId || '').replace(/[^A-Za-z0-9_-]/g, '') || 'default';
+  return path.join(os.tmpdir(), `ponystack-${sid}.json`);
+}
+
+function readState(sessionId) {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(statePath(sessionId), 'utf8'));
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function writeState(sessionId, state) {
+  // ponystack: best-effort. A hook must never break the session, so a failed
+  // write degrades to "no escalation this turn" rather than throwing.
+  try {
+    fs.writeFileSync(statePath(sessionId), JSON.stringify(state));
+  } catch (e) { /* intentionally silent */ }
+}
+
 // --- main --------------------------------------------------------------------
 function readStdin() {
   return new Promise((resolve) => {
@@ -103,22 +285,71 @@ function readStdin() {
   });
 }
 
+// --- output ------------------------------------------------------------------
+// Native Claude accepts raw stdout on SessionStart and UserPromptSubmit, but
+// DROPS context on PreToolUse and SubagentStart unless it is wrapped in
+// hookSpecificOutput. Source: ponytail-runtime.js:67-74.
+function emitContext(event, text, extra) {
+  const out = { hookEventName: event, additionalContext: text };
+  if (extra) Object.assign(out, extra);
+  process.stdout.write(JSON.stringify({ hookSpecificOutput: out }));
+}
+
+async function readPayload() {
+  try {
+    const raw = (await readStdin()).replace(/^﻿/, '');
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};  // ponystack: bad/empty stdin degrades to no-op, never a throw
+  }
+}
+
 async function main() {
   const mode = process.argv[2];
+
   if (mode === 'session') {
     process.stdout.write(membraneDoctrine());
     return;
   }
+
+  const payload = await readPayload();
+
   if (mode === 'prompt') {
-    let prompt = '';
-    try {
-      const raw = (await readStdin()).replace(/^﻿/, '');
-      prompt = raw ? (JSON.parse(raw).prompt || '') : '';
-    } catch (e) { /* ponystack: bad/empty stdin → default phase */ }
-    process.stdout.write(PHASE_RULE[detectPhase(prompt)]);
+    const phase = detectPhase(payload.prompt || '');
+    writeState(payload.session_id, { phase, latched: false });
+    process.stdout.write(PHASE_RULE[phase]);
+    return;
+  }
+
+  if (mode === 'pretool') {
+    const st = readState(payload.session_id);
+    if (!st) return;
+    const file = (payload.tool_input && payload.tool_input.file_path) || '';
+    if (!shouldEscalate(st.phase, st.latched, file)) return;
+    // Escalation is the correction, so persist it. Otherwise a subagent spawned
+    // after this write inherits the router's stale guess and gets told not to
+    // write production code while the parent is already writing it.
+    writeState(payload.session_id, { phase: 'implement', latched: true });
+    // Never 'deny'. This hook sits in front of every file write in every
+    // session; a bug here must cost a missing rule, never a blocked edit.
+    emitContext('PreToolUse', PHASE_RULE.implement, { permissionDecision: 'defer' });
+    return;
+  }
+
+  if (mode === 'subagent') {
+    const st = readState(payload.session_id);
+    // hasOwn, not a truthy lookup: st.phase comes off disk, and a crafted
+    // "constructor" would otherwise emit a function. Same guard as detectPhase.
+    if (!st || !Object.hasOwn(PHASE_RULE, st.phase)) return;
+    emitContext('SubagentStart', PHASE_RULE[st.phase]);
   }
 }
 
-if (require.main === module) main();
+// A hook must never break the session: degrade to exit 0 with no output.
+if (require.main === module) main().catch(() => {});
 
-module.exports = { detectPhase, membraneDoctrine, PHASE_RULE };
+module.exports = { detectPhase, membraneDoctrine, PHASE_RULE,
+  statePath, readState, writeState, shouldEscalate,
+  // Exported so the guard test can derive the command names literally listed in
+  // PROSE_RULES and assert none of them contradicts the table.
+  COMMAND_PHASE, PROSE_RULES };

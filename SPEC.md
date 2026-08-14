@@ -34,11 +34,26 @@ think hard - then write the least code that satisfies it.
 >    - understand / plan / design / research → senior **silent** (gstack rules).
 >    - implement → senior at **max** (the ladder, YAGNI).
 >    - review → **both** (correctness bugs + a delete-list).
->    Detect the phase primarily from which gstack command is running
->    (`/plan-*`, `/spec`, `/investigate`, `/design-*` → understand;
->    `/review`, `/qa`, `/code-review`, `/design-review` → review;
->    `/ship`, `/land-and-deploy` → implement) plus natural-language fallbacks.
+>    - neutral → **neither** (ops, tooling, prose: one short line, no opinion).
+>    Resolve the phase in this order: an explicit `/ponystack <phase>` argument
+>    wins outright; then a lookup table keyed on the gstack command name
+>    (`/spec`, `/investigate`, `/plan-*` → understand; `/review`, `/qa`,
+>    `/devex-review` → review; `/ship`, `/land-and-deploy` → implement;
+>    `/browse`, `/freeze`, `/document-generate` → neutral); then suffix rules
+>    (`plan-*-review` → understand, `*-review` → review); then
+>    natural-language fallbacks; then **neutral**. A table, not a regex
+>    alternation - alternation misses on hyphens. Consult the table only when
+>    the message opens with a command sigil (`/`, `@`, `$`): many command names
+>    are ordinary English words that would otherwise shadow the prose rules.
 >    A plan review (`/plan-ceo-review`) is understand, not review.
+>    Neutral is the default: an unrecognised command must get one short line,
+>    never the code ladder applied to a strategy review.
+>    Prompt text is only a guess, so correct it twice. **Escalate mid-turn**:
+>    the first time the turn actually writes a code file, inject the implement
+>    rule at that write - once per turn, prose paths exempt, so a plan review
+>    writing its own plan file does not escalate. **Reach subagents**: hand the
+>    turn's phase to Task-spawned agents, which otherwise run the lazy senior
+>    with no counterweight.
 > 2. **Expand → contract conveyor.** A wide pass ends with a mandatory
 >    lazy-senior gate that cuts breadth to the minimum that works. Output: one
 >    line per finding, ending `net: -N lines possible.`
@@ -46,8 +61,9 @@ think hard - then write the least code that satisfies it.
 >    champion. A session skill + the headline metric of the bootstrap.
 >
 > Mirror ponytail's proven layout: `.claude-plugin/{plugin.json,marketplace.json}`,
-> `hooks/` (SessionStart + UserPromptSubmit), `skills/`, `commands/`,
-> `benchmarks/`, `README.md`, `LICENSE` (MIT), `AGENTS.md`.
+> `hooks/` (SessionStart, UserPromptSubmit, PreToolUse, SubagentStart),
+> `skills/`, `commands/`, `benchmarks/`, `README.md`, `LICENSE` (MIT),
+> `AGENTS.md`.
 >
 > The benchmark must prove the claim with reproducible numbers: three arms
 > (no-skill baseline, gstack = its ETHOS as system prompt, ponystack) over the

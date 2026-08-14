@@ -6,6 +6,7 @@
   "scripts": {
     "test": "node --test",
     "bench": "npx promptfoo@latest eval -c benchmarks/promptfooconfig.yaml --repeat 10 && npx promptfoo@latest view",
-    "bench:local": "node benchmarks/run-local.js"
+    "bench:local": "node benchmarks/run-local.js",
+    "bench:routing": "node benchmarks/routing.js --compare"
   }
 }
