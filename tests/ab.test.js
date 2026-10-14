@@ -29,6 +29,12 @@ test('metric: ladder-heavy understand reply scores as ladder applied', () => {
   assert.ok(r.score >= 4, `expected >= 4 families, got ${r.score}: ${r.hits}`);
 });
 
+// Excerpt in the style of a real arm-A reply from the first live run (paraphrase, no stock phrases).
+test('metric: plain-words scope cut is detected (post-hoc recall fix)', () => {
+  const r = ladder("The plan is sound, but it's about 40% too big for 300 customers. Cut the schema registry, and build the rest in stages.");
+  assert.equal(r.applied, true, `hits: ${r.hits}`);
+});
+
 test('metric: a thorough reply with no cuts is NOT ladder applied', () => {
   assert.equal(ladder(LAKE_BOILED).applied, false);
 });

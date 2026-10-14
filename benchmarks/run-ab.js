@@ -33,7 +33,16 @@ const DATE = new Date().toISOString().slice(0, 10);
 const OUT = arg('--out', path.join(__dirname, 'results', `${DATE}-ponystack-with-ponytail.raw.json`));
 const mean = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN);
 
-async function call(messages) {
+async function call(messages, tries = 4) {
+  for (let k = 1; ; k++) {
+    try { return await once(messages); } catch (e) {
+      if (k >= tries || /^4(?!29)/.test(e.message)) throw e;  // retry network errors, 429, 5xx
+      await new Promise((r) => setTimeout(r, 2000 * k));
+    }
+  }
+}
+
+async function once(messages) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
@@ -84,19 +93,20 @@ async function live() {
   const u = {}, i = {};
   console.log(`\nmodel ${MODEL}, ${REPEAT} samples per cell\n`);
   console.log('### UNDERSTAND: did the reply apply the ladder?\n');
-  console.log('| arm | n | applied | mean families hit | ' + Object.keys(FAMILIES).join(' | ') + ' | mean input tok |');
-  console.log('|---|--:|--:|--:|' + Object.keys(FAMILIES).map(() => '--:').join('|') + '|--:|');
+  console.log('| arm | n | applied | mean families hit | mean reply chars (exploratory) | ' + Object.keys(FAMILIES).join(' | ') + ' | mean input tok |');
+  console.log('|---|--:|--:|--:|--:|' + Object.keys(FAMILIES).map(() => '--:').join('|') + '|--:|');
   for (const arm of arms) {
     const rs = by('understand', arm);
     u[arm] = mean(rs.map((r) => r.score));
-    console.log(`| ${arm} | ${rs.length} | ${rs.filter((r) => r.applied).length} | ${u[arm].toFixed(2)} | ` +
+    console.log(`| ${arm} | ${rs.length} | ${rs.filter((r) => r.applied).length} | ${u[arm].toFixed(2)} | ${mean(rs.map((r) => r.text.length)).toFixed(0)} | ` +
       Object.keys(FAMILIES).map((k) => rs.filter((r) => r.hits.includes(k)).length).join(' | ') + ` | ${mean(rs.map((r) => r.inTok)).toFixed(0)} |`);
   }
   console.log('\n### IMPLEMENT: code size and correctness (7 tasks)\n');
   console.log('| arm | n | LOC per 7-task pass | correct | mean input tok |\n|---|--:|--:|--:|--:|');
   for (const arm of arms) {
     const rs = by('implement', arm);
-    i[arm] = { loc: rs.reduce((a, r) => a + r.loc, 0) / REPEAT, ok: mean(rs.map((r) => r.ok)) };
+    // sum of per-task means, so a lost sample cannot shrink the total (n is printed beside it)
+    i[arm] = { loc: tasks.reduce((a, t) => a + mean(rs.filter((r) => r.id === t.vars.id).map((r) => r.loc)), 0), ok: mean(rs.map((r) => r.ok)) };
     console.log(`| ${arm} | ${rs.length} | ${i[arm].loc.toFixed(0)} | ${(i[arm].ok * 100).toFixed(0)}% | ${mean(rs.map((r) => r.inTok)).toFixed(0)} |`);
   }
   console.log('\n### Verdict (pre-registered thresholds in ab-metrics.js)\n');
