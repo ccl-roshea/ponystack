@@ -5,9 +5,9 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { ladder, verdict } = require('../benchmarks/ab-metrics.js');
+const { ladder, verdict, lengthVerdict } = require('../benchmarks/ab-metrics.js');
 const { ARMS, PONYTAIL, build, bytes } = require('../benchmarks/ab-arms.js');
-const { UNDERSTAND } = require('../benchmarks/run-ab.js');
+const { UNDERSTAND, HARD } = require('../benchmarks/run-ab.js');
 const hook = path.join(__dirname, '..', 'hooks', 'ponystack-hook.js');
 
 // Synthetic: a plan review that applies the ponytail ladder to a PLAN. This is the conflict.
@@ -53,12 +53,24 @@ test('verdict: B like A -> not keep; A~C -> inconclusive', () => {
   assert.equal(verdict({ A: 3, B: 0.5, C: 0.4 }, { A: { loc: 100, ok: 1 }, B: { loc: 120, ok: 1 } }).keep, false);
 });
 
+test('verdict: understand-only run (no implement data) does not crash and does not claim keep', () => {
+  const v = verdict({ A: 3, B: 0.5, C: 0.4 }, null);
+  assert.deepEqual([v.understand, v.implementNotWorse, v.keep], ['like-C', null, null]);
+});
+
+test('lengthVerdict: recovered share maps to like-C / partial / like-A, and needs a real gap', () => {
+  assert.equal(lengthVerdict({ A: 4000, B: 6500, C: 7000 }).position, 'like-C');
+  assert.equal(lengthVerdict({ A: 4000, B: 5500, C: 7000 }).position, 'partial');
+  assert.equal(lengthVerdict({ A: 4000, B: 4400, C: 7000 }).position, 'like-A');
+  assert.equal(lengthVerdict({ A: 6500, B: 7000, C: 7000 }).position, 'inconclusive');  // ladder barely compressed
+});
+
 test('arms: each arm injects exactly its parts, and the router sees understand prompts as understand', () => {
   const p = UNDERSTAND[0].prompt;
   const has = (arm, s) => build(arm, p)[0].content.includes(s);
   assert.deepEqual(['A', 'B', 'C', 'D'].map((a) => has(a, 'PONYTAIL MODE ACTIVE')), [true, true, false, false]);
   assert.deepEqual(['A', 'B', 'C', 'D'].map((a) => has(a, 'PONYSTACK ACTIVE')), [false, true, true, false]);
-  for (const u of UNDERSTAND) assert.equal(bytes('C', u.prompt).phase, 'understand', u.id);
+  for (const u of [...UNDERSTAND, ...HARD]) assert.equal(bytes('C', u.prompt).phase, 'understand', u.id);
   assert.equal(bytes('D', p).session, 0);
   assert.equal(Object.keys(ARMS).length, 4);
 });

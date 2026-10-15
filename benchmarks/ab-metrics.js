@@ -35,7 +35,8 @@ function ladder(text) {
 // Verdict against the operator's decision criteria. Thresholds are fixed here,
 // before any data: understand position = how far B sits from C toward A.
 //   u: mean ladder score per arm on understand prompts, {A,B,C}
-//   i: implement results per arm, {A:{loc,ok}, B:{loc,ok}}  (loc per 7-task pass, ok in 0..1)
+//   i: implement results per arm, {A:{loc,ok}, B:{loc,ok}}  (loc per 7-task pass, ok in 0..1),
+//      or null for an understand-only run (then implementNotWorse and keep are null)
 function verdict(u, i) {
   const gap = u.A - u.C;
   let understand, pos = null;
@@ -44,9 +45,22 @@ function verdict(u, i) {
     pos = (u.B - u.C) / gap;
     understand = pos <= 1 / 3 ? 'like-C' : pos >= 2 / 3 ? 'like-A' : 'partial';
   }
-  const implementNotWorse = i.B.loc <= 1.10 * i.A.loc && i.B.ok >= i.A.ok - 0.05;
-  const keep = understand === 'like-C' && implementNotWorse;
+  const implementNotWorse = i ? i.B.loc <= 1.10 * i.A.loc && i.B.ok >= i.A.ok - 0.05 : null;
+  const keep = i ? understand === 'like-C' && implementNotWorse : null;
   return { understand, pos, implementNotWorse, keep };
 }
 
-module.exports = { ladder, verdict, FAMILIES, THRESHOLD };
+// Length position, registered 2026-10-15 BEFORE any B or C data existed for the hard
+// set (a pilot had A and D only). Plan reviews under the ladder come back much
+// shorter, so reply length is the ladder's footprint when its words are not used.
+//   len: mean reply chars per arm {A,B,C}. recovered = (B-A)/(C-A): how much of the
+//   ladder's compression the router undoes. >= 2/3 like-C, <= 1/3 like-A, else partial.
+//   Needs the ladder to compress at all: (C-A)/C >= 15%, else inconclusive.
+function lengthVerdict(len) {
+  const bite = (len.C - len.A) / len.C;
+  if (!(bite >= 0.15)) return { position: 'inconclusive', recovered: null, bite };
+  const recovered = (len.B - len.A) / (len.C - len.A);
+  return { position: recovered >= 2 / 3 ? 'like-C' : recovered <= 1 / 3 ? 'like-A' : 'partial', recovered, bite };
+}
+
+module.exports = { ladder, verdict, lengthVerdict, FAMILIES, THRESHOLD };
