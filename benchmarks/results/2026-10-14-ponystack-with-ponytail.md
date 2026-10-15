@@ -2,11 +2,13 @@
 
 Date: 2026-10-14. Branch `ponystack-ab-eval`. Model: `claude-sonnet-5-5`, temperature 1.
 
-**Status: run, with one pre-registered question left inconclusive.** The
-implement-phase result is clean. The understand-phase pre-registered metric
-could not separate the arms (see "Live results"), so the formal verdict is
-*inconclusive*, not pass or fail. Run 1 was discarded as primary data for two
-documented reasons; run 2 is the primary dataset.
+**Status: run. Implement phase clean; understand phase answered as "partial".**
+Implement: the deployed stack equals ponytail alone. Understand: the regex
+metric never separated the arms (inconclusive, twice); a length-position metric,
+registered before the hard-set B/C data existed, says the router undoes about half
+of the ladder's compression of plan reviews, not all of it. Run 1 was discarded as
+primary data for two documented reasons; run 2 and the hard set (2026-10-15) are
+the primary datasets.
 
 ## Question
 
@@ -187,6 +189,69 @@ understated and meaningless. Both are fixed in the harness. Its length ordering
 matched run 2 (A 4,182 / B 6,043 / C 6,487 / D 6,761 chars), which is why I treat
 that pattern as replicated rather than as one lucky draw.
 
+### Hard set (2026-10-15): prompts built to make the conflict bite
+
+Run 2 could not tell whether the ladder reaches plan reviews because the prompts
+gave it little to cut. So six new understand prompts were written (`HARD` in
+`run-ab.js`) that invite breadth, ambition or exhaustive enumeration and say
+thoroughness is wanted ("map the full space", "what is the 10x version", "enumerate
+exhaustively, we will cut later", "do not propose fixes yet"). Applying the ladder
+is the wrong move on each. All six route to `understand` (tested).
+
+Procedure, in order:
+
+1. **Pilot, arms A and D only, 2 samples, 24 calls** (`*.hard.pilot.raw.json`).
+   Rule fixed before running: keep a prompt only if A hits at least 0.5 more regex
+   families than D. This selects on A vs D only, so it cannot bias B vs C.
+   Result: only `aiassist` and `onboarding` pass. The regex metric still barely
+   separates A from D, but reply length does so everywhere: A is 25-55% shorter
+   than D on all six prompts.
+2. **Registered `lengthVerdict()` before collecting any B or C hard-set data**
+   (commit `76e8884`): recovered = (B-A)/(C-A); at least 2/3 like-C, at most 1/3
+   like-A, else partial; needs (C-A)/C of at least 15% or the result is
+   inconclusive. Mutation check: inverting the mapping fails its test.
+3. **Main run, 4 arms x 6 prompts x 3 fresh samples = 72 calls, none failed**
+   (`*.hard.raw.json`). Because the pilot filter leaves only two prompts, I ran all
+   six and report the full set and the two-prompt subset.
+
+| arm | n | regex families | applied | mean reply chars | mean input tok |
+|---|--:|--:|--:|--:|--:|
+| A ponytail | 18 | 0.39 | 2 | 8,900 | 1,051 |
+| B both | 18 | 0.39 | 1 | 10,283 | 1,565 |
+| C ponystack | 18 | 0.89 | 5 | 11,728 | 613 |
+| D none | 18 | 0.28 | 0 | 11,085 | 99 |
+
+Length verdict (registered rule): all six prompts **partial**, recovered 49%,
+ladder bite 24%. Two-prompt subset: **partial**, recovered 59%, bite 38%.
+
+Per-prompt mean chars (A / B / C / D) and share of the A-to-C gap B recovers:
+
+| prompt | A | B | C | D | B recovers |
+|---|--:|--:|--:|--:|--:|
+| finapp | 6,943 | 8,482 | 10,830 | 11,018 | 40% |
+| aiassist | 4,120 | 6,377 | 6,623 | 5,920 | 90% |
+| notify | 9,746 | 9,953 | 11,071 | 13,045 | 16% |
+| latency | 8,937 | 12,468 | 14,159 | 13,777 | 68% |
+| onboarding | 6,462 | 7,965 | 10,386 | 14,357 | 38% |
+| billing | 17,189 | 16,450 | 17,298 | 8,391 | n/a (see below) |
+
+- `billing` is an outlier: D was short and highly variable (6,912 / 13,767 / 4,495
+  chars) while A, B and C were all long. Excluding it, the verdict is unchanged:
+  partial, 54%. It is not removed from the headline number.
+- 15 of 18 B samples are longer than that prompt's A mean, so the direction is
+  not carried by a few replies.
+- **The regex metric failed again, in a new way.** C scores highest (0.89) because
+  prompts that ask for "options from conservative to ambitious" make a "minimal
+  version" option a correct answer, tripping `shortestDiff`. Do not read the
+  regex columns as ladder strength; the length rule is the only metric here that
+  tracked the pilot's A-vs-D signal. This is the second reason (after run 1) to
+  replace the regex with an LLM judge if the question needs to be settled on
+  content rather than size.
+
+Across all three understand datasets the share of the ladder's compression that B
+undoes is **81% (run 1, default prompts), 56% (run 2), 49% (hard set)**. Only the
+hard-set figure was measured under a rule registered in advance.
+
 ## What the data supports
 
 1. **Implement phase: the deployed stack (B) is not worse than ponytail alone (A).**
@@ -202,10 +267,16 @@ that pattern as replicated rather than as one lucky draw.
    plan reviews about 32% vs baseline (4,250 vs 6,215 chars in run 2, 4,182 vs
    6,761 in run 1), consistently across all 3 prompts. With ponystack added (B),
    length recovers by roughly 55-80% of that gap (run 2: 56%, run 1: 81%; B is 8-11%
-   below D). C is about equal to D. Read cautiously: length is a proxy for
-   "compressed by the ladder", it conflates style with substance, and I chose it
-   after seeing run 1. It is consistent with the router partly overriding the
-   ladder in understand turns, and with no more than that.
+   below D). C is about equal to D. This was exploratory; the hard set then tested
+   it under a registered rule and got the same answer (partial, 49%). Length is a
+   proxy for "compressed by the ladder": it does not show the shorter replies are
+   worse, only that the ladder is shaping plan reviews.
+5. **Understand phase: the router partly overrides the ladder, about half.**
+   Registered rule, hard prompts: partial. It is not "like C" (ladder fully
+   silenced, at least 2/3 recovered) and not "like A" (router loses, at most 1/3).
+   So the original concern is half right: ponytail's always-on ruleset does leak
+   into understand turns even with ponystack present, and ponystack's silence rule
+   cancels roughly half of it.
 4. **Dropping ponytail is not free.** C (ponystack alone) writes 151 LOC vs A's 124
    (+22%, worse on 6 of 7 tasks) with one more failing sample (76% vs 81%). That
    is the measured cost of options (ii) and (iii): ponystack's condensed ladder is
@@ -214,14 +285,22 @@ that pattern as replicated rather than as one lucky draw.
 
 ## Recommendation against the decision criteria
 
-**Do not deprecate. Keep ponystack alongside ponytail as deployed.** Be clear about
-what carries this: the pre-registered rule did *not* return keep. It returned
-inconclusive, because the understand-phase metric could not separate the arms. The
-recommendation rests on (1) a measured implement result where B equals A, (2) the
-measured cost of the alternatives that drop ponytail (+22% LOC), (3) an exploratory,
-replicated length signal consistent with the router offsetting part of the ladder,
-and (4) no evidence of harm anywhere. That is a judgement beyond the rule, and the
-operator may weigh it differently.
+**Do not deprecate. Keep ponystack alongside ponytail as deployed, and know that
+its understand-phase silence is about half effective.** Neither of the criteria
+branches fires cleanly: the regex rule was inconclusive twice, and the registered
+length rule says *partial*, between "like C" (keep) and "like A" (re-evaluate).
+The recommendation rests on (1) a measured implement result where B equals A,
+(2) the measured cost of dropping ponytail (+22% LOC), (3) the router demonstrably
+undoing about half of the ladder's effect on plan reviews (replicated three times),
+and (4) no measured harm: shorter plan reviews are not shown to be worse reviews.
+That is a judgement beyond the rule, and the operator may weigh it differently.
+
+If the residual half matters, the least-code lever is not removing a plugin but
+making ponystack's understand rule say so explicitly (today it says the senior is
+"SILENT" and never tells the model to set aside ponytail's ruleset). That is a
+one-sentence edit to `PHASE_RULE.understand`, testable with this harness as a fifth
+arm. It is a hypothesis, not a measured result. Option (iii) removes the leak
+completely (arm C) at the +22% implement-LOC cost.
 
 Context cost of keeping both: +1,017 B per session and 94-558 B per prompt over
 ponytail alone (see the byte table), about 630 extra input tokens per call in this
@@ -242,7 +321,8 @@ Facts from the code, unchanged:
 | situation | what to do |
 |---|---|
 | you accept run 2 as is | keep both, change nothing |
-| you want the understand-phase conflict settled | harder understand prompts or an LLM judge validated against the fixtures, then rerun; the harness supports both |
+| you want the understand-phase effect judged on content, not size | an LLM judge validated against the fixtures; the harness already carries the prompts and saves raw replies |
+| you want to close the residual leak cheaply | test an explicit "set aside the ponytail ruleset this turn" sentence in the understand rule as arm B' |
 | ponystack must stand alone (e.g. ponytail removed upstream) | C is viable: it still cut LOC about 64% vs D, at about 22% more than A |
 
 ## Limitations
@@ -263,14 +343,14 @@ Facts from the code, unchanged:
   worst case for ponystack. gstack is also only installed on work-class machines.
 - **Subagents untested.** Only SubagentStart byte cost is reported. The claim that a
   Task-spawned review inherits the ladder uncountered is not exercised.
-- **Metric is regex.** It can over-count a rebuttal ("YAGNI does not apply here")
+- **Metric is regex, and it failed twice.** Run 1 (recall) and the hard set (C scored highest because option-listing prompts legitimately mention a minimal option). It can over-count a rebuttal ("YAGNI does not apply here")
   and miss paraphrase. The arm D floor and the saved raw replies are the guard.
 - **Small n.** 3 understand prompts x 3 samples = 9 replies per arm; 21 per implement cell. Treat the
   position ratio as coarse; the thresholds in `verdict()` are a decision aid, not a
   significance test. One model, one temperature (1).
 - **Implement family inherits the README benchmark's weaknesses:** React, FastAPI and
   cache correctness are structural checks, not executed.
-- **Understand prompts are mine.** They contain cuttable scope on purpose, which
+- **Prompts are mine.** Both sets were written by me; the hard set was filtered by a pilot that kept only 2 of 6 on the regex criterion, which I overrode by running all six and reporting both. Original run-2 prompts: They contain cuttable scope on purpose, which
   gives the ladder maximal opportunity to bite. That is the point (a conflict shows
   up there if anywhere), but it overstates how often real reviews hit it.
 - **Only the Anthropic Messages API path** is implemented in `run-ab.js`; the
