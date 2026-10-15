@@ -350,8 +350,8 @@ Facts from the code, unchanged:
   significance test. One model, one temperature (1).
 - **Implement family inherits the README benchmark's weaknesses:** React, FastAPI and
   cache correctness are structural checks, not executed.
-- **Prompts are mine.** Both sets were written by me; the hard set was filtered by a pilot that kept only 2 of 6 on the regex criterion, which I overrode by running all six and reporting both. Original run-2 prompts: They contain cuttable scope on purpose, which
-  gives the ladder maximal opportunity to bite. That is the point (a conflict shows
-  up there if anywhere), but it overstates how often real reviews hit it.
+- **Prompts are mine.** Both sets were written by me; the hard set was filtered by a pilot that kept only 2 of 6 on the regex criterion, which I overrode by running all six and reporting both. Both sets are
+  built to give the ladder a chance to bite (the default set has cuttable scope, the
+  hard set invites breadth), which overstates how often real reviews hit it.
 - **Only the Anthropic Messages API path** is implemented in `run-ab.js`; the
   Perplexity / OpenAI-compatible paths of `run-local.js` are not wired in.
